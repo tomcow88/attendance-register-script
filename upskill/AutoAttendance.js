@@ -33,8 +33,7 @@ function checkAttendanceToday() {
  * Re-checks attendance for every session day in the schedule, overwriting auto-populated values.
  *
  * Iterates through each week and each day within that week, calling checkAttendance() for
- * each date. Currently limited to the first 3 weeks — remove or adjust the `if (i > 2) break`
- * guard when full re-check across all weeks is needed.
+ * each date.
  */
 function checkAllAttendance() {
     const ui = SpreadsheetApp.getUi();
@@ -52,7 +51,7 @@ function checkAllAttendance() {
         for (let j = 0; j < week.length; j++) {
             let date = week[j].date;
             let weekNum = i + 1;
-            checkAttendance(date, weekNum);
+            checkAttendance(date, weekNum, scheduleData);
             Utilities.sleep(500);
         }
     }
@@ -72,14 +71,19 @@ function checkAllAttendance() {
  * For each session type (SU, SD, GS, SME, CC), locates the corresponding Google Drive folder
  * and attendance file for the given date, then calls updateAttendance() to write results to RECORDS.
  *
+ * Accepts an optional pre-parsed scheduleData object to avoid re-reading DATABASE when called
+ * in a loop (e.g. from checkAllAttendance).
+ *
  * Returns a sessionsUpdated object indicating which session types were successfully updated.
  */
-function checkAttendance(todayDate, weekNum) {
+function checkAttendance(todayDate, weekNum, scheduleData) {
     let startTime = new Date();
 
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     const databaseSheet = spreadsheet.getSheetByName("DATABASE");
-    const scheduleData = JSON.parse(databaseSheet.getRange(3, 23, 1, 1).getValue());
+    if (!scheduleData) {
+        scheduleData = JSON.parse(databaseSheet.getRange(3, 23, 1, 1).getValue());
+    }
     const weeks = scheduleData.weeks;
     const schedule = scheduleData.schedule;
 
