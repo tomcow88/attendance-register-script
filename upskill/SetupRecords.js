@@ -240,12 +240,13 @@ function getStartOrEndDate(startOrEnd, dateOrDateTime) {
 
 /**
  * Returns true if the given cohort day number falls within a project or hackathon window.
- * These are fixed day ranges defined in generateSchedule.
+ * Ranges are derived from the shared constants in GenerateSchedule.js.
  */
 function isProjectOrHackathonDay(day) {
-    const projectHackathonDays = [
-        25, 26, 27, 28, 38, 39, 40, 41, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70,
-        71, 72, 73, 74, 75, 76, 77, 78, 79,
-    ];
-    return projectHackathonDays.includes(day);
+    return (
+        (day >= PROJ1_START_DAY && day <= PROJ1_END_DAY) ||
+        (day >= HACK1_START_DAY && day <= HACK1_END_DAY) ||
+        (day >= PROJ2_START_DAY && day <= PROJ2_END_DAY) ||
+        (day >= HACK2_START_DAY && day <= HACK2_END_DAY)
+    );
 }

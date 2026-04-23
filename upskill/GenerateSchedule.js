@@ -11,22 +11,24 @@
  *  - proj1StartDate, proj1EndDate, proj2StartDate, proj2EndDate
  *  - hack1StartDate, hack1EndDate, hack2StartDate, hack2EndDate
  */
+// Fixed day-number thresholds for project and hackathon windows.
+// Defined at module scope so isProjectOrHackathonDay can reference the same values
+// without duplicating them.
+const PROJ1_START_DAY = 21;
+const PROJ1_END_DAY = 25;
+const HACK1_START_DAY = 36;
+const HACK1_END_DAY = 41;
+const PROJ2_START_DAY = 60;
+const PROJ2_END_DAY = 75;
+const HACK2_START_DAY = 76;
+const HACK2_END_DAY = 80;
+
 function generateSchedule(startDate, holidays) {
     let currentDate = new Date(startDate);
 
     let schedule = [];
     let scheduleLength = 0;
     let week = [];
-
-    // Fixed day-number thresholds for project and hackathon windows.
-    const proj1StartDay = 26;
-    const proj1EndDay = 28;
-    const hack1StartDay = 39;
-    const hack1EndDay = 41;
-    const proj2StartDay = 62;
-    const proj2EndDay = 75;
-    const hack2StartDay = 77;
-    const hack2EndDay = 79;
     let proj1StartDate;
     let proj1EndDate;
     let hack1StartDate;
@@ -70,14 +72,14 @@ function generateSchedule(startDate, holidays) {
         currentDate.setDate(currentDate.getDate() + 1);
 
         // Capture the dates that mark the boundaries of project and hackathon windows.
-        if (scheduleLength == proj1StartDay) proj1StartDate = formattedCurentDate;
-        if (scheduleLength == proj1EndDay) proj1EndDate = formattedCurentDate;
-        if (scheduleLength == proj2StartDay) proj2StartDate = formattedCurentDate;
-        if (scheduleLength == proj2EndDay) proj2EndDate = formattedCurentDate;
-        if (scheduleLength == hack1StartDay) hack1StartDate = formattedCurentDate;
-        if (scheduleLength == hack1EndDay) hack1EndDate = formattedCurentDate;
-        if (scheduleLength == hack2StartDay) hack2StartDate = formattedCurentDate;
-        if (scheduleLength == hack2EndDay) hack2EndDate = formattedCurentDate;
+        if (scheduleLength == PROJ1_START_DAY) proj1StartDate = formattedCurentDate;
+        if (scheduleLength == PROJ1_END_DAY) proj1EndDate = formattedCurentDate;
+        if (scheduleLength == PROJ2_START_DAY) proj2StartDate = formattedCurentDate;
+        if (scheduleLength == PROJ2_END_DAY) proj2EndDate = formattedCurentDate;
+        if (scheduleLength == HACK1_START_DAY) hack1StartDate = formattedCurentDate;
+        if (scheduleLength == HACK1_END_DAY) hack1EndDate = formattedCurentDate;
+        if (scheduleLength == HACK2_START_DAY) hack2StartDate = formattedCurentDate;
+        if (scheduleLength == HACK2_END_DAY) hack2EndDate = formattedCurentDate;
     }
 
     // Push any remaining days that didn't fill a complete week.
