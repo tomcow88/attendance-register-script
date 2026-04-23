@@ -47,7 +47,6 @@ function checkAllAttendance() {
     const schedule = scheduleData.schedule;
 
     for (let i = 0; i < weeks; i++) {
-        if (i > 2) break; // TODO: remove this limit to enable full re-check across all weeks
         let week = schedule[i];
 
         for (let j = 0; j < week.length; j++) {
