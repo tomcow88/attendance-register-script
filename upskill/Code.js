@@ -32,7 +32,11 @@ function onOpen() {
         .addSeparator()
         .addItem("Auto Setup Steps", "setupEverything")
         .addSeparator()
-        .addItem("Update Database", "updateDatabase");
+        .addItem("Update Database", "updateDatabase")
+        .addSeparator()
+        .addItem("Add Returning Learner", "addReturningLearner")
+        .addSeparator()
+        .addItem("Refresh Prior GLH", "refreshPriorGLH");
     menu.addToUi();
 
     // "Auto Attendance" menu: check attendance entries for today only, or re-check all dates.
@@ -357,4 +361,266 @@ function autoGeneratePartnerReports() {
 
     let elapsedTime = new Date() - startTime;
     Logger.log(`Finished - ${elapsedTime / 1000} seconds`);
+}
+
+/**
+ * Inserts a new student row into every weekly RECORDS block for a returning learner.
+ * The new row is appended at the end of each block's student section and populated with
+ * formulas copied from the row above. Blocks are processed bottom-to-top so that earlier
+ * block row positions are not shifted by later insertions.
+ *
+ * numOfStudents is the count BEFORE the new student is added.
+ * fullName is written into column 1 of the new row.
+ */
+function insertLearnerIntoRecords(recordsSheet, numOfStudents, fullName) {
+    const lastCol = recordsSheet.getLastColumn();
+    for (let i = 15; i >= 0; i--) {
+        const newStudentRow = 23 + numOfStudents + i * (numOfStudents + 7);
+        recordsSheet.insertRows(newStudentRow, 1);
+        recordsSheet
+            .getRange(newStudentRow - 1, 1, 1, lastCol)
+            .copyTo(
+                recordsSheet.getRange(newStudentRow, 1, 1, lastCol),
+                SpreadsheetApp.CopyPasteType.PASTE_FORMULA,
+                false
+            );
+        recordsSheet.getRange(newStudentRow, 1, 1, 1).setValue(fullName);
+    }
+}
+
+/**
+ * Prompts the user for a returning learner's details, looks them up in their prior cohort
+ * spreadsheet, and adds them to the end of the current cohort's DATABASE, RECORDS, and SUMMARY.
+ *
+ * Prior GLH and hackathon attendance are read from the prior cohort's SUMMARY sheet and stored
+ * in DATABASE columns 25–28 so that the SUMMARY formulas can include them in the learner's totals.
+ *
+ * The user is warned if the prior spreadsheet is inaccessible or the learner cannot be matched;
+ * they can choose to continue adding without prior data.
+ */
+function addReturningLearner() {
+    const ui = SpreadsheetApp.getUi();
+
+    const nameResponse = ui.prompt(
+        "Add Returning Learner",
+        "Enter full name (First Last):",
+        ui.ButtonSet.OK_CANCEL
+    );
+    if (nameResponse.getSelectedButton() !== ui.Button.OK) return;
+    const fullName = nameResponse.getResponseText().trim();
+    if (!fullName || !fullName.includes(" ")) {
+        ui.alert("Please enter a full name with first and last name separated by a space.");
+        return;
+    }
+
+    const partnerResponse = ui.prompt(
+        "Add Returning Learner",
+        "Enter funding partner name:",
+        ui.ButtonSet.OK_CANCEL
+    );
+    if (partnerResponse.getSelectedButton() !== ui.Button.OK) return;
+    const partner = partnerResponse.getResponseText().trim();
+
+    const emailResponse = ui.prompt(
+        "Add Returning Learner",
+        "Enter learner email address:",
+        ui.ButtonSet.OK_CANCEL
+    );
+    if (emailResponse.getSelectedButton() !== ui.Button.OK) return;
+    const email = emailResponse.getResponseText().trim();
+
+    const urlResponse = ui.prompt(
+        "Add Returning Learner",
+        "Enter prior cohort spreadsheet URL:",
+        ui.ButtonSet.OK_CANCEL
+    );
+    if (urlResponse.getSelectedButton() !== ui.Button.OK) return;
+    const priorUrl = urlResponse.getResponseText().trim();
+
+    const meetEmail = getMeetEmail(email);
+    let priorGlh = 0;
+    let priorHack1 = "";
+    let priorHack2 = "";
+
+    try {
+        const priorSpreadsheet = SpreadsheetApp.openByUrl(priorUrl);
+        const priorDatabase = priorSpreadsheet.getSheetByName("DATABASE");
+        const priorSummary = priorSpreadsheet.getSheetByName("SUMMARY");
+
+        if (!priorDatabase || !priorSummary) {
+            ui.alert("Could not find DATABASE or SUMMARY in the prior cohort spreadsheet.");
+            return;
+        }
+
+        const priorNumStudents = priorDatabase.getRange(3, 22, 1, 1).getValue();
+        let priorStudentDatabaseRow = -1;
+
+        for (let i = 0; i < priorNumStudents; i++) {
+            const cellValue = priorDatabase.getRange(3 + i, 5, 1, 1).getValue();
+            if (!cellValue) continue;
+            try {
+                const storedEmails = JSON.parse(cellValue);
+                if (storedEmails.includes(meetEmail)) {
+                    priorStudentDatabaseRow = 3 + i;
+                    break;
+                }
+            } catch (e) {
+                continue;
+            }
+        }
+
+        if (priorStudentDatabaseRow === -1) {
+            const proceed = ui.alert(
+                "Learner Not Found",
+                `No match for "${email}" in the prior cohort. Continue without prior data?`,
+                ui.ButtonSet.YES_NO
+            );
+            if (proceed !== ui.Button.YES) return;
+        } else {
+            // SUMMARY row = DATABASE row - 1 (SUMMARY row 2 = DATABASE row 3, etc.)
+            const priorSummaryRow = priorStudentDatabaseRow - 1;
+            priorGlh = priorSummary.getRange(priorSummaryRow, 6, 1, 1).getValue() || 0;
+            const hack1Raw = priorSummary.getRange(priorSummaryRow, 8, 1, 1).getValue();
+            const hack2Raw = priorSummary.getRange(priorSummaryRow, 9, 1, 1).getValue();
+            priorHack1 = hack1Raw === "Yes" ? "Yes" : "";
+            priorHack2 = hack2Raw === "Yes" ? "Yes" : "";
+        }
+    } catch (e) {
+        const proceed = ui.alert(
+            "Could Not Access Prior Spreadsheet",
+            `Error: ${e.message}\nContinue without prior data?`,
+            ui.ButtonSet.YES_NO
+        );
+        if (proceed !== ui.Button.YES) return;
+    }
+
+    const nameParts = fullName.split(" ");
+    const firstName = nameParts[0];
+    const lastName = nameParts.slice(1).join(" ");
+
+    const confirmMsg =
+        `Name: ${fullName}\nPartner: ${partner}\nEmail: ${email}` +
+        `\nPrior GLH: ${priorGlh}` +
+        `\nPrior Hack1: ${priorHack1 || "N/A"}` +
+        `\nPrior Hack2: ${priorHack2 || "N/A"}`;
+
+    const confirmed = ui.alert("Confirm Returning Learner", confirmMsg, ui.ButtonSet.OK_CANCEL);
+    if (confirmed !== ui.Button.OK) return;
+
+    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    const databaseSheet = spreadsheet.getSheetByName("DATABASE");
+    const summarySheet = spreadsheet.getSheetByName("SUMMARY");
+    const recordsSheet = spreadsheet.getSheetByName("RECORDS");
+
+    const numOfStudents = getNumOfStudents();
+    const newDatabaseRow = 3 + numOfStudents;
+
+    databaseSheet.getRange(newDatabaseRow, 1, 1, 1).setValue(fullName);
+    databaseSheet.getRange(newDatabaseRow, 2, 1, 1).setValue(firstName);
+    databaseSheet.getRange(newDatabaseRow, 3, 1, 1).setValue(lastName);
+    databaseSheet.getRange(newDatabaseRow, 4, 1, 1).setValue(`["${firstName}"]`);
+    databaseSheet.getRange(newDatabaseRow, 5, 1, 1).setValue(`["${meetEmail}"]`);
+    databaseSheet.getRange(newDatabaseRow, 25, 1, 1).setValue(priorUrl);
+    databaseSheet.getRange(newDatabaseRow, 26, 1, 1).setValue(priorGlh);
+    if (priorHack1 === "Yes") databaseSheet.getRange(newDatabaseRow, 27, 1, 1).setValue("Yes");
+    if (priorHack2 === "Yes") databaseSheet.getRange(newDatabaseRow, 28, 1, 1).setValue("Yes");
+
+    databaseSheet.getRange(3, 22, 1, 1).setValue(numOfStudents + 1);
+
+    insertLearnerIntoRecords(recordsSheet, numOfStudents, fullName);
+
+    const newSummaryRow = numOfStudents + 2;
+    summarySheet
+        .getRange(newSummaryRow - 1, 1, 1, 9)
+        .copyTo(summarySheet.getRange(newSummaryRow, 1, 1, 9));
+    summarySheet.getRange(newSummaryRow, 1, 1, 1).setValue(firstName);
+    summarySheet.getRange(newSummaryRow, 2, 1, 1).setValue(lastName);
+    summarySheet.getRange(newSummaryRow, 3, 1, 1).setValue(partner);
+    summarySheet.getRange(newSummaryRow, 4, 1, 1).setValue("Active");
+
+    ui.alert(`"${fullName}" added successfully as a returning learner.`);
+}
+
+/**
+ * Re-reads the prior cohort spreadsheet for each returning learner in DATABASE (those with
+ * a URL in column 25) and refreshes the prior GLH and hackathon data in columns 26–28.
+ *
+ * Learners are matched by their stored meet email (DATABASE col 5) against the prior DATABASE.
+ * Any inaccessible spreadsheets or unmatched learners are listed in the summary alert.
+ */
+function refreshPriorGLH() {
+    const ui = SpreadsheetApp.getUi();
+    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    const databaseSheet = spreadsheet.getSheetByName("DATABASE");
+    const numOfStudents = getNumOfStudents();
+
+    let updated = 0;
+    let warnings = [];
+
+    for (let i = 0; i < numOfStudents; i++) {
+        const databaseRow = 3 + i;
+        const priorUrl = databaseSheet.getRange(databaseRow, 25, 1, 1).getValue();
+        if (!priorUrl) continue;
+
+        const fullName = databaseSheet.getRange(databaseRow, 1, 1, 1).getValue() || `Row ${databaseRow}`;
+
+        try {
+            const priorSpreadsheet = SpreadsheetApp.openByUrl(priorUrl);
+            const priorDatabase = priorSpreadsheet.getSheetByName("DATABASE");
+            const priorSummary = priorSpreadsheet.getSheetByName("SUMMARY");
+
+            if (!priorDatabase || !priorSummary) {
+                warnings.push(`${fullName}: DATABASE or SUMMARY not found in prior spreadsheet.`);
+                continue;
+            }
+
+            let currentMeetEmails = [];
+            try {
+                currentMeetEmails = JSON.parse(databaseSheet.getRange(databaseRow, 5, 1, 1).getValue());
+            } catch (e) {
+                warnings.push(`${fullName}: Could not read stored meet emails.`);
+                continue;
+            }
+
+            const priorNumStudents = priorDatabase.getRange(3, 22, 1, 1).getValue();
+            let priorStudentDatabaseRow = -1;
+
+            for (let j = 0; j < priorNumStudents; j++) {
+                const cellValue = priorDatabase.getRange(3 + j, 5, 1, 1).getValue();
+                if (!cellValue) continue;
+                try {
+                    const storedEmails = JSON.parse(cellValue);
+                    if (currentMeetEmails.some((e) => storedEmails.includes(e))) {
+                        priorStudentDatabaseRow = 3 + j;
+                        break;
+                    }
+                } catch (e) {
+                    continue;
+                }
+            }
+
+            if (priorStudentDatabaseRow === -1) {
+                warnings.push(`${fullName}: Could not find matching learner in prior spreadsheet.`);
+                continue;
+            }
+
+            const priorSummaryRow = priorStudentDatabaseRow - 1;
+            const priorGlh = priorSummary.getRange(priorSummaryRow, 6, 1, 1).getValue() || 0;
+            const hack1Raw = priorSummary.getRange(priorSummaryRow, 8, 1, 1).getValue();
+            const hack2Raw = priorSummary.getRange(priorSummaryRow, 9, 1, 1).getValue();
+
+            databaseSheet.getRange(databaseRow, 26, 1, 1).setValue(priorGlh);
+            databaseSheet.getRange(databaseRow, 27, 1, 1).setValue(hack1Raw === "Yes" ? "Yes" : "");
+            databaseSheet.getRange(databaseRow, 28, 1, 1).setValue(hack2Raw === "Yes" ? "Yes" : "");
+            updated++;
+        } catch (e) {
+            warnings.push(`${fullName}: ${e.message}`);
+        }
+    }
+
+    let message = `Refresh complete.\nUpdated: ${updated} learner(s).`;
+    if (warnings.length > 0) {
+        message += "\n\nWarnings:\n" + warnings.join("\n");
+    }
+    ui.alert("Refresh Prior GLH", message, ui.ButtonSet.OK);
 }
