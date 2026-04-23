@@ -133,7 +133,7 @@ function isWinterBreak(date) {
 /**
  * Formats a Date object into a long-form locale string, e.g. "Monday, January 1, 2024".
  */
-function formatDate(date) {
+function formatDateLong(date) {
     const options = {
         weekday: "long",
         year: "numeric",
