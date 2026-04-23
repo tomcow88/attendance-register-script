@@ -1,3 +1,16 @@
+/**
+ * Generates an 80-working-day schedule starting from the given date, skipping weekends,
+ * public holidays, and the winter break. Days are grouped into arrays of 5 (Mon–Fri weeks).
+ *
+ * Also tracks the start and end dates of the two project windows and two hackathon windows
+ * based on fixed day-number thresholds.
+ *
+ * Returns a scheduleData object containing:
+ *  - weeks: total number of weeks
+ *  - schedule: 2D array of { day, date } objects grouped by week
+ *  - proj1StartDate, proj1EndDate, proj2StartDate, proj2EndDate
+ *  - hack1StartDate, hack1EndDate, hack2StartDate, hack2EndDate
+ */
 function generateSchedule(startDate, holidays) {
     let currentDate = new Date(startDate);
 
@@ -5,6 +18,7 @@ function generateSchedule(startDate, holidays) {
     let scheduleLength = 0;
     let week = [];
 
+    // Fixed day-number thresholds for project and hackathon windows.
     const proj1StartDay = 26;
     const proj1EndDay = 28;
     const hack1StartDay = 39;
@@ -23,6 +37,7 @@ function generateSchedule(startDate, holidays) {
     let hack2EndDate;
 
     while (scheduleLength < 80) {
+        // Skip non-working days without counting them toward the 80-day total.
         if (
             isWeekend(currentDate) ||
             isPublicHoliday(currentDate, holidays) ||
@@ -34,6 +49,7 @@ function generateSchedule(startDate, holidays) {
 
         scheduleLength++;
 
+        // Normalise to midday to avoid timezone-related date shifts when converting to ISO string.
         currentDate.setHours(12, 0, 0, 0);
         formattedCurentDate = currentDate.toISOString().split("T")[0];
 
@@ -45,6 +61,7 @@ function generateSchedule(startDate, holidays) {
         };
         week.push(dateObj);
 
+        // Once a full Mon–Fri week is accumulated, push it to the schedule and start a new week.
         if (week.length === 5) {
             schedule.push(week);
             week = [];
@@ -52,20 +69,18 @@ function generateSchedule(startDate, holidays) {
 
         currentDate.setDate(currentDate.getDate() + 1);
 
-        if (scheduleLength == proj1StartDay)
-            proj1StartDate = formattedCurentDate;
+        // Capture the dates that mark the boundaries of project and hackathon windows.
+        if (scheduleLength == proj1StartDay) proj1StartDate = formattedCurentDate;
         if (scheduleLength == proj1EndDay) proj1EndDate = formattedCurentDate;
-        if (scheduleLength == proj2StartDay)
-            proj2StartDate = formattedCurentDate;
+        if (scheduleLength == proj2StartDay) proj2StartDate = formattedCurentDate;
         if (scheduleLength == proj2EndDay) proj2EndDate = formattedCurentDate;
-        if (scheduleLength == hack1StartDay)
-            hack1StartDate = formattedCurentDate;
+        if (scheduleLength == hack1StartDay) hack1StartDate = formattedCurentDate;
         if (scheduleLength == hack1EndDay) hack1EndDate = formattedCurentDate;
-        if (scheduleLength == hack2StartDay)
-            hack2StartDate = formattedCurentDate;
+        if (scheduleLength == hack2StartDay) hack2StartDate = formattedCurentDate;
         if (scheduleLength == hack2EndDay) hack2EndDate = formattedCurentDate;
     }
 
+    // Push any remaining days that didn't fill a complete week.
     if (week.length > 0) {
         schedule.push(week);
     }
@@ -86,11 +101,17 @@ function generateSchedule(startDate, holidays) {
     return scheduleData;
 }
 
+/**
+ * Returns true if the given date falls on a Saturday or Sunday.
+ */
 function isWeekend(date) {
     const day = date.getDay();
     return day === 0 || day === 6; // Sunday = 0, Saturday = 6
 }
 
+/**
+ * Returns true if the given date matches any date in the provided holidays array.
+ */
 function isPublicHoliday(date, holidays) {
     return holidays.some(
         (holiday) =>
@@ -100,13 +121,18 @@ function isPublicHoliday(date, holidays) {
     );
 }
 
+/**
+ * Returns true if the given date falls within the winter break: 24 December to 1 January (inclusive).
+ */
 function isWinterBreak(date) {
     const month = date.getMonth();
     const day = date.getDate();
-    // Check if the date is between 24th December and 1st January
     return (month === 11 && day >= 24) || (month === 0 && day <= 1);
 }
 
+/**
+ * Formats a Date object into a long-form locale string, e.g. "Monday, January 1, 2024".
+ */
 function formatDate(date) {
     const options = {
         weekday: "long",
@@ -117,6 +143,11 @@ function formatDate(date) {
     return date.toLocaleDateString("en-US", options);
 }
 
+/**
+ * Returns a hardcoded array of public holiday Date objects for the given location.
+ * Supported locations: "IE" (Ireland) or any other value (defaults to England & Wales).
+ * Covers 2024–2026.
+ */
 function getPublicHolidays(location) {
     const irelandHolidays = [
         // 2024

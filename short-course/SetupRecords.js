@@ -1,3 +1,13 @@
+/**
+ * Builds the RECORDS sheet structure for the full cohort schedule.
+ *
+ * Steps:
+ *  1. Copies the template name row to create one row per student, populating full names.
+ *  2. Copies the weekly block template once per week in the schedule, appending blocks downward.
+ *  3. Writes the correct week label, dates, day labels, PRO formulas, and percentage formulas
+ *     into each weekly block, and highlights project/hackathon days.
+ *  4. Deletes the original template block and calls setCurrentWeek to initialise the week display.
+ */
 function setupRecords() {
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     const databaseSheet = spreadsheet.getSheetByName("DATABASE");
@@ -5,8 +15,7 @@ function setupRecords() {
     const recordsLastCol = recordsSheet.getLastColumn();
 
     const numOfStudents = databaseSheet.getRange(3, 22, 1, 1).getValue();
-    const scheduleDataString = databaseSheet.getRange(3, 23, 1, 1).getValue();
-    const scheduleData = JSON.parse(scheduleDataString);
+    const scheduleData = JSON.parse(databaseSheet.getRange(3, 23, 1, 1).getValue());
     const weeks = scheduleData.weeks;
     const schedule = scheduleData.schedule;
     const fullNames = databaseSheet
@@ -14,167 +23,91 @@ function setupRecords() {
         .getValues()
         .flat();
 
-    // Setup Template Weeks
-
+    // Copy the template name row across numOfStudents rows to create the student name block.
     const defaultNameRow = 23;
-    const defaultNameRowRange = recordsSheet.getRange(
-        defaultNameRow,
-        1,
-        1,
-        recordsLastCol,
-    );
-
-    const targetNameRow = defaultNameRow;
-    const numOfTargetNameRows = numOfStudents;
-    const targetNameRowRange = recordsSheet.getRange(
-        targetNameRow,
-        1,
-        numOfTargetNameRows,
-        recordsLastCol,
-    );
+    const defaultNameRowRange = recordsSheet.getRange(defaultNameRow, 1, 1, recordsLastCol);
+    const targetNameRowRange = recordsSheet.getRange(defaultNameRow, 1, numOfStudents, recordsLastCol);
     defaultNameRowRange.copyTo(targetNameRowRange);
 
-    // Add Full Names
     for (let i = 0; i < numOfStudents; i++) {
-        let nameRow = defaultNameRow + i;
-        let fullName = fullNames[i];
-
-        recordsSheet.getRange(nameRow, 1, 1, 1).setValue(fullName);
+        recordsSheet.getRange(defaultNameRow + i, 1, 1, 1).setValue(fullNames[i]);
     }
 
+    // Copy the full weekly block template (header rows + student rows) once per week,
+    // appending each block immediately below the previous one.
     const sourceStartRow = 17;
     const numberOfSourceRows = 7 + numOfStudents;
-    const sourceRange = recordsSheet.getRange(
-        sourceStartRow,
-        1,
-        numberOfSourceRows,
-        recordsLastCol,
-    );
+    const sourceRange = recordsSheet.getRange(sourceStartRow, 1, numberOfSourceRows, recordsLastCol);
 
     let targetStartRow = sourceStartRow + numberOfSourceRows;
     for (let i = 0; i < weeks; i++) {
-        let targetRange = recordsSheet.getRange(
-            targetStartRow,
-            1,
-            numberOfSourceRows,
-            recordsLastCol,
-        );
-        sourceRange.copyTo(targetRange);
+        sourceRange.copyTo(recordsSheet.getRange(targetStartRow, 1, numberOfSourceRows, recordsLastCol));
         targetStartRow += numberOfSourceRows;
     }
 
-    // Add Correct Dates and Weeks
-
+    // Layout constants for week label, date, and day rows within each weekly block.
     const defaultWeekRow = 18;
     const defaultWeekCol = 1;
-    const defaultWeekRows = 2;
-    const defaultWeekCols = 1;
-
     const defaultDateDayCol = 14;
-    const defaultDateDayRows = 1;
     const defaultDateDayCols = 10;
-
     const weekRowDifference = numberOfSourceRows;
-    const dateRowDifference = 0;
-    const dayRowDifference = 1;
     const dateDayColDifference = defaultDateDayCols + 1;
 
-    const defaultDateRow = defaultWeekRow + dateRowDifference;
-    const defaultDateFormat = recordsSheet
-        .getRange(
-            defaultDateRow,
-            defaultDateDayCol,
-            defaultDateDayRows,
-            defaultDateDayCols,
-        )
-        .getNumberFormat();
-    const defaultDayRow = defaultWeekRow + dayRowDifference;
-    const defaultDayFormat = recordsSheet
-        .getRange(
-            defaultDayRow,
-            defaultDateDayCol,
-            defaultDateDayRows,
-            defaultDateDayCols,
-        )
-        .getNumberFormat();
-
-    const startScheduleRow = 21;
+    const percentCol = 12;
+    const proCols = JSON.parse(databaseSheet.getRange(8, 10, 1, 1).getValue());
+    const suCols = JSON.parse(databaseSheet.getRange(3, 10, 1, 1).getValue());
     const proGlh = databaseSheet.getRange(8, 9, 1, 1).getValue();
+
+    // PRO (project hours) formula: awards project GLH if either the SU or SD column for that
+    // student has a positive value or a "-" marker, otherwise 0. Propagates "X" for inactive students.
     const proFormula = `=IF(OR(INDIRECT(ADDRESS(ROW(), COLUMN()-4))="X", INDIRECT(ADDRESS(ROW(), COLUMN()-5))="X"), "X",
-    IF(AND(INDIRECT(ADDRESS(ROW(), COLUMN()-4))="-", INDIRECT(ADDRESS(ROW(), COLUMN()-5))="-"), "-", 
+    IF(AND(INDIRECT(ADDRESS(ROW(), COLUMN()-4))="-", INDIRECT(ADDRESS(ROW(), COLUMN()-5))="-"), "-",
     IF(OR(
         ISNUMBER(INDIRECT(ADDRESS(ROW(), COLUMN()-4))) * (INDIRECT(ADDRESS(ROW(), COLUMN()-4)) > 0),
         ISNUMBER(INDIRECT(ADDRESS(ROW(), COLUMN()-5))) * (INDIRECT(ADDRESS(ROW(), COLUMN()-5)) > 0)
     ), ${proGlh}, 0)))`;
-    const proFormulas = Array.from({ length: numOfStudents }, () => [
-        proFormula,
-    ]);
-    const percentCol = 12;
-    const proCols = JSON.parse(databaseSheet.getRange(8, 10, 1, 1).getValue());
-    const suCols = JSON.parse(databaseSheet.getRange(3, 10, 1, 1).getValue());
+    const proFormulas = Array.from({ length: numOfStudents }, () => [proFormula]);
 
     for (let i = 0; i < weeks; i++) {
         let week = schedule[i];
         let weekNum = i + 1;
         let weekRow = defaultWeekRow + weekRowDifference * weekNum;
+        let scheduleRow = weekRow + 3;
+
         recordsSheet
-            .getRange(weekRow, defaultWeekCol, defaultWeekRows, defaultWeekCols)
+            .getRange(weekRow, defaultWeekCol, 2, 1)
             .setValue(`Week ${weekNum}`);
 
-        let scheduleRow = weekRow + 3;
+        // Percentage formula: each student's cumulative GLH for this week divided by the
+        // total possible GLH up to week 1 (used to show attendance rate progression).
         let percentFormula = `=IF(AND(ISNUMBER(INDIRECT(ADDRESS(ROW(), COLUMN()-1))), ISNUMBER(INDIRECT(ADDRESS(21 + (${i} * (SUMMARY!K8 + 7)), COLUMN()-1)))), INDIRECT(ADDRESS(ROW(), COLUMN()-1)) / INDIRECT(ADDRESS(21 + (${i} * (SUMMARY!K8 + 7)), COLUMN()-1)), "")`;
-        let percentFormulas = Array.from({ length: numOfStudents }, () => [
-            percentFormula,
-        ]);
-        recordsSheet
-            .getRange(scheduleRow + 2, percentCol, numOfStudents, 1)
-            .setFormulas(percentFormulas);
+        let percentFormulas = Array.from({ length: numOfStudents }, () => [percentFormula]);
+        recordsSheet.getRange(scheduleRow + 2, percentCol, numOfStudents, 1).setFormulas(percentFormulas);
 
-        let dateRow = weekRow + dateRowDifference;
-        let dayRow = weekRow + dayRowDifference;
         for (let j = 1; j < week.length + 1; j++) {
             let dateObj = week[j - 1];
             let date = dateObj.date;
             let day = dateObj.day;
             let dateDayCol = defaultDateDayCol + dateDayColDifference * (j - 1);
 
+            // Format as DD/MM/YYYY for display in the date row.
             let dateTime = new Date(date);
             const formattedDate = `${String(dateTime.getDate()).padStart(2, "0")}/${String(dateTime.getMonth() + 1).padStart(2, "0")}/${String(dateTime.getFullYear())}`;
-            let dateRange = recordsSheet.getRange(
-                dateRow,
-                dateDayCol,
-                defaultDateDayRows,
-                defaultDateDayCols,
-            );
-            dateRange.setValue(formattedDate);
+            recordsSheet
+                .getRange(weekRow, dateDayCol, 1, defaultDateDayCols)
+                .setValue(formattedDate);
 
             const weekDays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-            const months = [
-                "Jan",
-                "Feb",
-                "Mar",
-                "Apr",
-                "May",
-                "Jun",
-                "Jul",
-                "Aug",
-                "Sep",
-                "Oct",
-                "Nov",
-                "Dec",
-            ];
+            const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
             const formattedDay = `Day ${day} - ${weekDays[dateTime.getDay()]} - ${String(dateTime.getDate())} ${months[dateTime.getMonth()]}`;
-            let dayRange = recordsSheet.getRange(
-                dayRow,
-                dateDayCol,
-                defaultDateDayRows,
-                defaultDateDayCols,
-            );
-            dayRange.setValue(formattedDay);
+            recordsSheet
+                .getRange(weekRow + 1, dateDayCol, 1, defaultDateDayCols)
+                .setValue(formattedDay);
 
             let proCol = proCols[j];
             let suCol = suCols[j];
 
+            // Project and hackathon days get PRO formulas and an amber background to distinguish them visually.
             if (isProjectOrHackathonDay(day)) {
                 recordsSheet
                     .getRange(scheduleRow + 2, proCol, numOfStudents, 1)
@@ -182,27 +115,32 @@ function setupRecords() {
                 recordsSheet
                     .getRange(scheduleRow - 3, suCol, 2, 10)
                     .setBackgroundRGB(249, 203, 156);
-                let dayString = recordsSheet
-                    .getRange(scheduleRow - 2, suCol, 1, 10)
-                    .getValue();
-                let newDayString = dayString + " - Project";
+                let dayString = recordsSheet.getRange(scheduleRow - 2, suCol, 1, 10).getValue();
                 recordsSheet
                     .getRange(scheduleRow - 2, suCol, 1, 10)
-                    .setValue(newDayString);
+                    .setValue(dayString + " - Project");
             }
         }
     }
 
+    // Remove the original template block now that all weekly blocks have been generated.
     recordsSheet.deleteRows(defaultWeekRow, numberOfSourceRows);
     setCurrentWeek(false);
 }
 
+/**
+ * Updates the "current week" and "today's date" display cells in both RECORDS and SUMMARY.
+ * Pass a YYYY-MM-DD date string to override today's date (useful for testing), or false to use now.
+ * Returns the currentWeekData object from getCurrentWeekData().
+ */
 function setCurrentWeek(todayDate) {
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     const recordsSheet = spreadsheet.getSheetByName("RECORDS");
     const summarySheet = spreadsheet.getSheetByName("SUMMARY");
 
     const currentWeekData = getCurrentWeekData(todayDate);
+
+    // Preserve the existing number format when writing the date so cell formatting is not lost.
     const todayDateRange = recordsSheet.getRange(14, 13, 2, 5);
     const todayDateFormat = todayDateRange.getNumberFormat();
     todayDateRange.setValue(currentWeekData.todayDate);
@@ -217,30 +155,26 @@ function setCurrentWeek(todayDate) {
     return currentWeekData;
 }
 
+/**
+ * Calculates the current week number, day number, and today's date relative to the cohort schedule.
+ * Returns "Not Started" or "Finished" if today falls outside the cohort date range.
+ * Pass a YYYY-MM-DD string to override today, or false to use the real current date.
+ */
 function getCurrentWeekData(todayDate) {
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     const databaseSheet = spreadsheet.getSheetByName("DATABASE");
 
-    const scheduleDataString = databaseSheet.getRange(3, 23, 1, 1).getValue();
-    const scheduleData = JSON.parse(scheduleDataString);
+    const scheduleData = JSON.parse(databaseSheet.getRange(3, 23, 1, 1).getValue());
     const weeks = scheduleData.weeks;
     const schedule = scheduleData.schedule;
 
     const startDateTime = getStartOrEndDate("start", "dateTime");
     const endDateTime = getStartOrEndDate("end", "dateTime");
 
-    let todayDateTime;
+    let todayDateTime = todayDate ? new Date(todayDate) : new Date();
 
-    if (todayDate) {
-        todayDateTime = new Date(todayDate);
-    } else {
-        todayDateTime = new Date();
-    }
-
+    // Set to 22:00 so any session earlier in the day is treated as "today" without overlap issues.
     todayDateTime.setHours(22, 0, 0, 0);
-
-    let startOfWeekDateTime = new Date(todayDateTime);
-    let endOfWeekDateTime = new Date(todayDateTime);
 
     let currentWeekNum = 0;
     let currentDay = 0;
@@ -258,19 +192,17 @@ function getCurrentWeekData(todayDate) {
         for (let i = 0; i < weeks; i++) {
             currentWeekNum = i + 1;
             let nextWeek = schedule[currentWeekNum];
-            if (i == weeks - 1) {
-                nextWeek = schedule[i];
-            }
-            let firstDateOfWeek = nextWeek[0].date;
-            let firstDateTimeOfWeek = new Date(firstDateOfWeek);
+            if (i == weeks - 1) nextWeek = schedule[i];
+
+            let firstDateTimeOfWeek = new Date(nextWeek[0].date);
             firstDateTimeOfWeek.setHours(6, 0, 0, 0);
+
             if (todayDateTime < firstDateTimeOfWeek) {
                 currentWeek = `Week ${currentWeekNum}`;
                 let w = schedule[i];
                 for (let j = 0; j < w.length; j++) {
-                    let d = w[j];
-                    if (d.date == todayDateTime.toISOString().split("T")[0]) {
-                        currentDay = d.day;
+                    if (w[j].date == todayDateTime.toISOString().split("T")[0]) {
+                        currentDay = w[j].day;
                     }
                 }
                 break;
@@ -278,50 +210,41 @@ function getCurrentWeekData(todayDate) {
         }
     }
 
-    let todayDateString = todayDateTime.toISOString().split("T")[0];
-
-    const currentWeekData = {
-        startDateTime: startOfWeekDateTime,
-        endDateTime: endOfWeekDateTime,
+    return {
+        startDateTime: new Date(todayDateTime),
+        endDateTime: new Date(todayDateTime),
         currentWeek: currentWeek,
         currentWeekNum: currentWeekNum,
         todayDateTime: todayDateTime,
-        todayDate: todayDateString,
+        todayDate: todayDateTime.toISOString().split("T")[0],
         currentDay: currentDay,
     };
-
-    return currentWeekData;
 }
 
+/**
+ * Reads the cohort start or end date from DATABASE.
+ * Pass "start" or "end" for startOrEnd, and "date" (YYYY-MM-DD string) or "dateTime" (Date object)
+ * for the return type.
+ */
 function getStartOrEndDate(startOrEnd, dateOrDateTime) {
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     const databaseSheet = spreadsheet.getSheetByName("DATABASE");
 
-    let dateRow;
-
-    if (startOrEnd == "start") {
-        dateRow = 3;
-    } else {
-        dateRow = 4;
-    }
-
-    const dateString = databaseSheet.getRange(dateRow, 21, 1, 1).getValue();
-    const dateTime = new Date(dateString);
+    const dateRow = startOrEnd == "start" ? 3 : 4;
+    const dateTime = new Date(databaseSheet.getRange(dateRow, 21, 1, 1).getValue());
     dateTime.setHours(6, 0, 0, 0);
 
-    if (dateOrDateTime == "date") {
-        const date = dateTime.toISOString().split("T")[0];
-        return date;
-    } else {
-        return dateTime;
-    }
+    return dateOrDateTime == "date" ? dateTime.toISOString().split("T")[0] : dateTime;
 }
 
+/**
+ * Returns true if the given cohort day number falls within a project or hackathon window.
+ * These are fixed day ranges defined in generateSchedule.
+ */
 function isProjectOrHackathonDay(day) {
     const projectHackathonDays = [
         25, 26, 27, 28, 38, 39, 40, 41, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70,
         71, 72, 73, 74, 75, 76, 77, 78, 79,
     ];
-
     return projectHackathonDays.includes(day);
 }

@@ -1,8 +1,14 @@
+/**
+ * Recreates the working sheets by deleting any existing ones and copying fresh copies
+ * from the TEMPLATE_* sheets. Also creates a blank LOGS sheet.
+ * If no SETUP sheet exists, one is created from the template first.
+ *
+ * Working sheets created: DATABASE, SUMMARY, RECORDS, PARTNER_REPORTS, LOGS.
+ */
 function createSheetsFromTemplates() {
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
 
     let setupSheet = spreadsheet.getSheetByName("SETUP");
-
     if (!setupSheet) {
         setupSheet = createNewSetupSheet();
     }
@@ -10,12 +16,12 @@ function createSheetsFromTemplates() {
     setupSheet.showSheet();
     spreadsheet.setActiveSheet(setupSheet);
 
+    // Delete any existing working sheets before recreating them to ensure a clean state.
     const oldDatabaseSheet = spreadsheet.getSheetByName("DATABASE");
     const oldRecordsSheet = spreadsheet.getSheetByName("RECORDS");
     const oldSummarySheet = spreadsheet.getSheetByName("SUMMARY");
     const oldLogsSheet = spreadsheet.getSheetByName("LOGS");
-    const oldPartnerReportsSheet =
-        spreadsheet.getSheetByName("PARTNER_REPORTS");
+    const oldPartnerReportsSheet = spreadsheet.getSheetByName("PARTNER_REPORTS");
 
     if (oldDatabaseSheet) spreadsheet.deleteSheet(oldDatabaseSheet);
     if (oldRecordsSheet) spreadsheet.deleteSheet(oldRecordsSheet);
@@ -23,62 +29,61 @@ function createSheetsFromTemplates() {
     if (oldLogsSheet) spreadsheet.deleteSheet(oldLogsSheet);
     if (oldPartnerReportsSheet) spreadsheet.deleteSheet(oldPartnerReportsSheet);
 
-    const databaseTemplateSheet =
-        spreadsheet.getSheetByName("TEMPLATE_DATABASE");
-    const recordsTemplateSheet = spreadsheet.getSheetByName("TEMPLATE_RECORDS");
-    const summaryTemplateSheet = spreadsheet.getSheetByName("TEMPLATE_SUMMARY");
-    const partnerReportsTemplateSheet = spreadsheet.getSheetByName(
-        "TEMPLATE_PARTNER_REPORTS",
-    );
-
-    const databaseSheet = databaseTemplateSheet.copyTo(spreadsheet);
+    const databaseSheet = spreadsheet.getSheetByName("TEMPLATE_DATABASE").copyTo(spreadsheet);
     databaseSheet.setName("DATABASE");
 
-    const summarySheet = summaryTemplateSheet.copyTo(spreadsheet);
+    const summarySheet = spreadsheet.getSheetByName("TEMPLATE_SUMMARY").copyTo(spreadsheet);
     summarySheet.setName("SUMMARY");
     summarySheet.showSheet();
     spreadsheet.setActiveSheet(summarySheet);
 
-    const recordsSheet = recordsTemplateSheet.copyTo(spreadsheet);
+    const recordsSheet = spreadsheet.getSheetByName("TEMPLATE_RECORDS").copyTo(spreadsheet);
     recordsSheet.setName("RECORDS");
     recordsSheet.showSheet();
 
-    const partnerReportsSheet = partnerReportsTemplateSheet.copyTo(spreadsheet);
+    const partnerReportsSheet = spreadsheet.getSheetByName("TEMPLATE_PARTNER_REPORTS").copyTo(spreadsheet);
     partnerReportsSheet.setName("PARTNER_REPORTS");
 
-    const logsSheet = spreadsheet.insertSheet("LOGS");
+    spreadsheet.insertSheet("LOGS");
     spreadsheet.setActiveSheet(summarySheet);
 }
 
+/**
+ * Deletes the existing SETUP sheet (if any) and creates a fresh one from TEMPLATE_SETUP.
+ * Returns the new SETUP sheet object.
+ */
 function createNewSetupSheet() {
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     const oldSetupSheet = spreadsheet.getSheetByName("SETUP");
 
-    if (oldSetupSheet) {
-        spreadsheet.deleteSheet(oldSetupSheet);
-    }
+    if (oldSetupSheet) spreadsheet.deleteSheet(oldSetupSheet);
 
-    const setupTemplateSheet = spreadsheet.getSheetByName("TEMPLATE_SETUP");
-    const setupSheet = setupTemplateSheet.copyTo(spreadsheet);
+    const setupSheet = spreadsheet.getSheetByName("TEMPLATE_SETUP").copyTo(spreadsheet);
     setupSheet.setName("SETUP");
     setupSheet.showSheet();
 
     return setupSheet;
 }
 
+/**
+ * Hides all sheets that end users do not need to interact with directly:
+ * all TEMPLATE_* sheets, SETUP, DATABASE, LOGS, and PARTNER_REPORTS.
+ * Also clears the email column in SETUP so sensitive data is not left visible.
+ */
 function hideAllUnusedSheets() {
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    const numOfStudents = getNumOfStudents();
+
     const setupTemplateSheet = spreadsheet.getSheetByName("TEMPLATE_SETUP");
-    const databaseTemplateSheet =
-        spreadsheet.getSheetByName("TEMPLATE_DATABASE");
+    const databaseTemplateSheet = spreadsheet.getSheetByName("TEMPLATE_DATABASE");
     const recordsTemplateSheet = spreadsheet.getSheetByName("TEMPLATE_RECORDS");
     const summaryTemplateSheet = spreadsheet.getSheetByName("TEMPLATE_SUMMARY");
     const setupSheet = spreadsheet.getSheetByName("SETUP");
     const databaseSheet = spreadsheet.getSheetByName("DATABASE");
     const logsSheet = spreadsheet.getSheetByName("LOGS");
     const partnerReportsSheet = spreadsheet.getSheetByName("PARTNER_REPORTS");
-    const numOfStudents = getNumOfStudents();
 
+    // Clear email column before hiding SETUP to avoid leaving PII in a visible sheet.
     setupSheet.getRange(3, 3, numOfStudents, 1).clearContent();
 
     if (setupTemplateSheet) setupTemplateSheet.hideSheet();
