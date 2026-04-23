@@ -272,12 +272,12 @@ function updateAttendance(
     const recordsSheet = spreadsheet.getSheetByName("RECORDS");
     const sessionRange = recordsSheet.getRange(sessionStartRow, sessionCol, numOfStudents + 1, 1);
 
-    // Preserve existing values greater than zero — these are assumed to be manually entered
-    // and should not be overwritten by the auto-check. Zero and non-numeric values are replaced.
+    // Preserve any existing non-empty, non-zero value — these are assumed to be manually entered.
+    // Zero is still re-evaluated since it's indistinguishable from a previous auto-check result.
     const currentSessionValues = sessionRange.getValues();
     for (let i = 0; i < currentSessionValues.length; i++) {
-        let numberValue = Number(currentSessionValues[i]);
-        if (numberValue > 0) {
+        const currentValue = currentSessionValues[i][0];
+        if (currentValue !== "" && currentValue !== 0) {
             attendanceValues[i] = currentSessionValues[i];
         }
     }
