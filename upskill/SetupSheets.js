@@ -8,6 +8,15 @@
 function createSheetsFromTemplates() {
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
 
+    // Validate all required templates exist before deleting any working sheets.
+    // If any are missing, abort so existing data is not permanently lost.
+    const requiredTemplates = ["TEMPLATE_DATABASE", "TEMPLATE_SUMMARY", "TEMPLATE_RECORDS", "TEMPLATE_PARTNER_REPORTS"];
+    const missingTemplates = requiredTemplates.filter(name => !spreadsheet.getSheetByName(name));
+    if (missingTemplates.length > 0) {
+        SpreadsheetApp.getUi().alert(`Cannot proceed: the following template sheets are missing:\n${missingTemplates.join("\n")}`);
+        return;
+    }
+
     let setupSheet = spreadsheet.getSheetByName("SETUP");
     if (!setupSheet) {
         setupSheet = createNewSetupSheet();
