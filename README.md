@@ -1,93 +1,131 @@
-# attendance-register-script
+# Attendance Register — User Guide
 
-A Google Apps Script for managing learner attendance registers in Google Sheets. It adds custom menus to the spreadsheet UI for setup, attendance checking, and generating per-partner report spreadsheets.
+This Google Apps Script manages learner attendance registers inside Google Sheets. There are two versions:
+
+- **Upskill script** — for upskill courses (80-day schedule, 16 weekly blocks)
+- **Short course script** — for short courses (setup and reports not yet implemented)
+
+Both scripts add custom menus to the spreadsheet UI. There is no installation step — paste the script files into the Apps Script editor (Extensions → Apps Script) and the menus appear the next time the spreadsheet is opened.
 
 ---
 
-## Spreadsheet structure
+## Upskill script
 
-The script expects the following named sheets to exist (or be created during setup):
+### Sheets overview
 
-| Sheet name | Purpose |
+| Sheet | Purpose |
 |---|---|
-| `SUMMARY` | One row per learner: first name, last name, funding partner, and additional metadata (e.g. current week in column 13) |
-| `RECORDS` | Attendance data laid out in repeating weekly blocks (16 weeks, each block starting at row `21 + weekIndex * (numStudents + 7)`) |
-| `PARTNER_REPORTS` | Log of all generated partner report spreadsheets (date, partner name, week, URL) |
-| `TEMPLATE_PARTNER_REPORTS` | Template sheet copied to create `PARTNER_REPORTS` if it does not yet exist |
-| Various `TEMPLATE_*` sheets | Used by the setup functions to create the working sheets |
+| `SETUP` | Where cohort configuration is entered before running setup |
+| `DATABASE` | Internal data store — populated by setup, read at runtime. Hidden after setup |
+| `RECORDS` | Weekly attendance blocks — one block per week, 16 weeks total |
+| `SUMMARY` | One row per learner — GLH totals, hackathon attendance, status |
+| `PARTNER_REPORTS` | Log of all generated report spreadsheets (date, partner, week, URL) |
 
 ---
 
-## Menus
+### Initial setup
 
-Three custom menus are added to the spreadsheet UI when it is opened.
+Before running setup, fill in the `SETUP` sheet with:
 
-### Setup
+- **Student names and email addresses** (first name, last name, email in columns A–C, one row per learner, starting at row 3)
+- **Calendar names** for each session type (column F): Stand Up, Stand Down, Guest Speaker, SME, Career Coach
+- **Delivery team details** (columns I–K): name, email, and Google Drive folder URL for the Facilitator, SME, and Career Coach
+- **Cohort metadata** (columns M–O): funding partner, location (e.g. `IE` for Ireland, or any value for England & Wales), and start date
 
-| Menu item | Function | Description |
-|---|---|---|
-| Create New Setup Sheet | `createNewSetupSheet` | Creates a fresh setup configuration sheet |
-| Manual Setup Steps > Step 1 | `createSheetsFromTemplates` | Copies template sheets into the spreadsheet |
-| Manual Setup Steps > Step 2 | `setupDatabase` | Populates the database sheet |
-| Manual Setup Steps > Step 3 | `setupRecords` | Builds the attendance records structure |
-| Manual Setup Steps > Step 4 | `setupSummary` | Builds the summary sheet |
-| Manual Setup Steps > Step 5 | `hideAllUnusedSheets` | Hides sheets not needed by end users |
-| Auto Setup Steps | `setupEverything` | Runs all five steps above in sequence |
-| Update Database | `updateDatabase` | Updates the database after initial setup |
+Once the SETUP sheet is complete, open the **Setup** menu and click **Auto Setup Steps**. This runs all five steps in sequence:
 
-### Auto Attendance
+1. Creates the working sheets (DATABASE, RECORDS, SUMMARY, PARTNER_REPORTS) from templates
+2. Populates DATABASE from the SETUP sheet
+3. Builds the 16 weekly attendance blocks in RECORDS
+4. Builds the SUMMARY sheet with GLH and hackathon formulas
+5. Hides all sheets that end users don't need to see
 
-| Menu item | Function | Description |
-|---|---|---|
-| Check Today | `checkAttendanceToday` | Checks attendance entries for today |
-| Check All | `checkAllAttendance` | Re-checks attendance entries across all dates |
-
-### Reports
-
-| Menu item | Function | Description |
-|---|---|---|
-| Generate Single Partner Report | `generatePartnerReport` | Prompts for a partner name and generates one report |
-| Generate Multiple Partner Reports | `autoGeneratePartnerReports` | Generates a report for every unique partner automatically |
+The alert at the end confirms success and shows how long it took. If you need to run any step individually, use **Setup → Manual Setup Steps**.
 
 ---
 
-## Functions
+### Checking attendance
 
-### `onOpen()`
-Runs automatically when the spreadsheet is opened. Registers the three custom menus described above.
+Attendance data is pulled automatically from Google Calendar and Google Meet records stored in each team member's Drive folder.
 
-### `setupEverything()`
-Runs all five setup steps in sequence and alerts the user when complete, including the elapsed time.
+**Setup → Auto Attendance → Check Today**
+Checks attendance for today's sessions only. Use this at the end of each day.
 
-### `generatePartnerReport()`
-Prompts the user for a funding partner name, then:
-1. Reads all learner rows from `SUMMARY` and splits them into matching (kept) and non-matching (removed) groups.
-2. Shows a confirmation dialog listing which learners will be kept and removed.
-3. Creates a new Google Spreadsheet named `Partner Report - <week> - <spreadsheet name>`.
-4. Copies `SUMMARY` and `RECORDS` into the new spreadsheet, removes non-partner learner rows, and compacts the remaining rows upward.
-5. Appends a log entry (date, partner name, current week, URL) to `PARTNER_REPORTS`.
-6. Navigates the user to the `PARTNER_REPORTS` sheet and shows a success alert.
-
-### `autoGeneratePartnerReports()`
-Same report generation logic as `generatePartnerReport()`, but runs automatically for every unique funding partner found in the `SUMMARY` sheet — no user prompts. Logs total elapsed time to the Apps Script logger when finished.
+**Auto Attendance → Check All**
+Re-checks attendance across all past dates. Existing positive numeric entries and non-numeric manual values are preserved — only blank cells are filled in.
 
 ---
 
-## Known issues
+### Changing a learner's status
 
-- **Row calculation bug** — in both report functions, the RECORDS row deletion logic uses absolute `SUMMARY` sheet row numbers as offsets into each weekly block, which is likely incorrect. The offset should be the student's 0-based index within the block, not the absolute row number.
-- **Duplicated logic** — `generatePartnerReport` and `autoGeneratePartnerReports` share ~80 lines of identical report-building code. This should be extracted into a shared helper function.
-- **Loop-invariant work inside the partner loop** — in `autoGeneratePartnerReports`, the current week is fetched and the `PARTNER_REPORTS` sheet is resolved on every iteration when both should happen once before the loop.
-- **Debug logging left in** — several `Logger.log` calls in `autoGeneratePartnerReports` were left in from development.
+Learner statuses are managed in the `SUMMARY` sheet, column D. The available values are:
+
+- `Active` — learner is attending
+- `Withdrawn` — learner has left the programme
+- `Non Starter` — learner never attended
+
+When you edit the status cell in SUMMARY, a confirmation dialog appears asking you to verify or correct the learner's last attended date. After confirming:
+
+- Setting to **Withdrawn** or **Non Starter** writes `X` into all attendance cells after the last attended date in RECORDS.
+- Setting back to **Active** writes `-` (not applicable) into all cells from the start of the cohort.
+
+This action affects the RECORDS sheet and is difficult to undo manually — confirm carefully before proceeding.
 
 ---
 
-## Dependencies
+### Adding email addresses to a learner record
 
-This script relies on several helper functions defined elsewhere in the project (not yet included in this file):
+A learner may join a Google Meet session using a different email address from the one registered. To ensure their attendance is captured:
 
-- `getNumOfStudents()` — returns the total number of learner rows in the `SUMMARY` sheet
-- `formatDate(dateString)` — formats a `YYYY-MM-DD` string for display in `PARTNER_REPORTS`
-- `createSheetsFromTemplates()`, `setupDatabase()`, `setupRecords()`, `setupSummary()`, `hideAllUnusedSheets()` — the five setup step functions
-- `checkAttendanceToday()`, `checkAllAttendance()` — attendance checking functions
-- `updateDatabase()`, `createNewSetupSheet()` — database and setup utilities
+1. Enter the additional email address in column C of the SETUP sheet, on the same row as the learner.
+2. Open **Setup → Update Database**.
+
+The script anonymises and appends the new email to the learner's existing record. The SETUP email column is cleared automatically once processed, so it is ready for the next batch. Repeat as needed — a learner can have any number of email addresses on record.
+
+---
+
+### Adding a returning learner
+
+A learner who completed a previous cohort and is joining this cohort mid-programme can be added via **Setup → Add Returning Learner**. You will be prompted for:
+
+1. **Full name** (First Last)
+2. **Funding partner**
+3. **Email address**
+4. **URL of their prior cohort spreadsheet**
+
+The script opens the prior cohort spreadsheet, finds the learner by email, and reads their final GLH total and hackathon attendance from the prior SUMMARY sheet. A confirmation dialog shows what will be carried over. After confirming:
+
+- The learner is added to the end of the DATABASE, SUMMARY, and all 16 RECORDS weekly blocks.
+- Their prior GLH is added to their running total in SUMMARY automatically — it appears as a carry-over in the GLH column even before they attend any sessions in the current cohort.
+- If they completed either hackathon in the prior cohort, the relevant hackathon column in SUMMARY shows `Yes` immediately.
+
+If the prior spreadsheet is inaccessible or the learner cannot be matched by email, you are given the option to add them without prior data.
+
+**Setup → Refresh Prior GLH**
+Re-reads all prior cohort spreadsheets and updates the carried-over GLH and hackathon data for all returning learners. Useful if the prior cohort's attendance was updated after the learner was added here. A summary alert reports how many learners were updated and lists any warnings (e.g. inaccessible prior spreadsheet).
+
+---
+
+### Generating partner reports
+
+Partner reports are separate Google Spreadsheets containing only the learners belonging to a given funding partner. They include a filtered copy of SUMMARY and RECORDS and are used for submission to funding bodies.
+
+**Reports → Generate Single Partner Report**
+Prompts for a funding partner name. Shows a confirmation dialog listing which learners will be included and which removed. Generates the report spreadsheet and logs it to PARTNER_REPORTS.
+
+**Reports → Generate Multiple Partner Reports**
+Automatically generates one report per unique funding partner found in SUMMARY — no confirmation prompts. All reports are logged to PARTNER_REPORTS.
+
+Both options name the generated spreadsheet `Partner Report - <current week> - <cohort name>` and log the date, partner name, current week, and URL to the PARTNER_REPORTS sheet.
+
+> **Note for Excel export:** Reports must be exported to `.xlsx` for partners who cannot open Google Sheets. Use File → Download → Microsoft Excel in the generated report spreadsheet. Signature images are not preserved in Excel export — these must be added manually after download.
+
+---
+
+## Short course script
+
+The short course script adds two menus — **Setup** and **Report** — to the spreadsheet UI. These features are not yet implemented:
+
+- **Setup → Setup Sheets** — will create the working sheets from templates
+- **Report → Generate Student Report** — will generate a per-student attendance report
+- **Report → Generate Partner Report** — will generate a per-partner attendance report
