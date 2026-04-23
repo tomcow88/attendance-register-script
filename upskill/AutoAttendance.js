@@ -246,7 +246,7 @@ function updateAttendance(
 
         for (let j = 0; j < meetNames.length; j++) {
             if (attendanceValue.length > 0) continue;
-            if (firstNames.includes(meetNames[j])) {
+            if (availableFirstNames.includes(meetNames[j])) {
                 attendanceValue.push(glh);
                 attendanceValues.push(attendanceValue);
                 lastAttendedValue.pop();
