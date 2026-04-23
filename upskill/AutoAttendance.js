@@ -53,6 +53,7 @@ function checkAllAttendance() {
             let date = week[j].date;
             let weekNum = i + 1;
             checkAttendance(date, weekNum);
+            Utilities.sleep(500);
         }
     }
 
