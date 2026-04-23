@@ -191,22 +191,23 @@ function getCurrentWeekData(todayDate) {
     } else {
         for (let i = 0; i < weeks; i++) {
             currentWeekNum = i + 1;
-            let nextWeek = schedule[currentWeekNum];
-            if (i == weeks - 1) nextWeek = schedule[i];
 
-            let firstDateTimeOfWeek = new Date(nextWeek[0].date);
-            firstDateTimeOfWeek.setHours(6, 0, 0, 0);
-
-            if (todayDateTime < firstDateTimeOfWeek) {
-                currentWeek = `Week ${currentWeekNum}`;
-                let w = schedule[i];
-                for (let j = 0; j < w.length; j++) {
-                    if (w[j].date == todayDateTime.toISOString().split("T")[0]) {
-                        currentDay = w[j].day;
-                    }
-                }
-                break;
+            // For all weeks except the last, skip ahead if today is on or after the next week's start.
+            if (i < weeks - 1) {
+                let firstDateTimeOfNextWeek = new Date(schedule[currentWeekNum][0].date);
+                firstDateTimeOfNextWeek.setHours(6, 0, 0, 0);
+                if (todayDateTime >= firstDateTimeOfNextWeek) continue;
             }
+
+            // Today is within week i (either we're before the next week's start, or this is the last week).
+            currentWeek = `Week ${currentWeekNum}`;
+            let w = schedule[i];
+            for (let j = 0; j < w.length; j++) {
+                if (w[j].date == todayDateTime.toISOString().split("T")[0]) {
+                    currentDay = w[j].day;
+                }
+            }
+            break;
         }
     }
 
