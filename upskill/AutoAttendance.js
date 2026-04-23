@@ -164,7 +164,13 @@ function updateAttendance(
 ) {
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     const numOfStudents = getNumOfStudents();
-    const parentFolder = DriveApp.getFolderById(parentFolderId);
+    let parentFolder;
+    try {
+        parentFolder = DriveApp.getFolderById(parentFolderId);
+    } catch (e) {
+        Logger.log(`updateAttendance: could not open folder ${parentFolderId} — ${e.message}`);
+        return false;
+    }
 
     // Search for a sub-folder whose name contains the session date string.
     const folders = parentFolder.searchFolders(`fullText contains '${date}'`);
