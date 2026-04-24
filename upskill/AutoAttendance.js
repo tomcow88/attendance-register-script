@@ -13,7 +13,7 @@ function checkAttendanceToday() {
     const currentWeekData = setCurrentWeek(todayDate);
     const currentDate = currentWeekData.todayDate;
     const weekNum = currentWeekData.currentWeekNum;
-    const sessionsUpdated = checkAttendance(currentDate, weekNum);
+    const { sessionsUpdated, permissionErrors } = checkAttendance(currentDate, weekNum);
 
     let endTime = new Date();
     let elapsedTime = endTime - startTime;
@@ -25,6 +25,12 @@ function checkAttendanceToday() {
         .setValue(
             `${currentDate} - ${Utilities.formatDate(endTime, Session.getScriptTimeZone(), "HH:mm:ss")} - Sessions Updated: ${JSON.stringify(sessionsUpdated)}`,
         );
+
+    if (permissionErrors.length > 0) {
+        SpreadsheetApp.getUi().alert(
+            "Attendance check completed, but could not access one or more Drive folders.\n\nPlease check that you have permission to access the attendance folders in Drive and try again.",
+        );
+    }
 
     Logger.log("Total Elapsed time: " + elapsedTime / 1000 + " seconds");
 }
@@ -45,24 +51,28 @@ function checkAllAttendance() {
     const weeks = scheduleData.weeks;
     const schedule = scheduleData.schedule;
 
+    let allPermissionErrors = new Set();
+
     for (let i = 0; i < weeks; i++) {
         let week = schedule[i];
 
         for (let j = 0; j < week.length; j++) {
             let date = week[j].date;
             let weekNum = i + 1;
-            checkAttendance(date, weekNum, scheduleData);
+            const { permissionErrors } = checkAttendance(date, weekNum, scheduleData);
+            permissionErrors.forEach(id => allPermissionErrors.add(id));
             Utilities.sleep(500);
         }
     }
 
     let elapsedTime = new Date() - startTime;
     Logger.log("Total Elapsed time: " + elapsedTime / 1000 + " seconds");
-    ui.alert(
-        "Finished checking all attendance\nElapsed time: " +
-            elapsedTime / 1000 +
-            " seconds",
-    );
+
+    let alertMsg = "Finished checking all attendance\nElapsed time: " + elapsedTime / 1000 + " seconds";
+    if (allPermissionErrors.size > 0) {
+        alertMsg += "\n\nCould not access one or more Drive folders. Please check that you have permission to access the attendance folders in Drive and try again.";
+    }
+    ui.alert(alertMsg);
 }
 
 /**
@@ -92,6 +102,7 @@ function checkAttendance(todayDate, weekNum, scheduleData) {
     const calendarNames = getCalendarNames();
     const glhs = [0.5, 0.5, 1, 2, 1]; // GLH awarded per session type
     let sessionsUpdated = { SU: false, SD: false, GS: false, SME: false, CC: false };
+    let permissionErrors = new Set();
 
     for (let i = 0; i < weeks; i++) {
         if (i + 1 != weekNum) continue;
@@ -127,13 +138,15 @@ function checkAttendance(todayDate, weekNum, scheduleData) {
                 );
                 if (updatedAttendance == "updated") {
                     sessionsUpdated[abreviation] = true;
+                } else if (updatedAttendance == "permission_error") {
+                    permissionErrors.add(parentFolderId);
                 }
             }
         }
     }
 
     Logger.log(todayDate + " - Elapsed time: " + (new Date() - startTime) / 1000 + " seconds");
-    return sessionsUpdated;
+    return { sessionsUpdated, permissionErrors: [...permissionErrors] };
 }
 
 /**
@@ -169,7 +182,7 @@ function updateAttendance(
         parentFolder = DriveApp.getFolderById(parentFolderId);
     } catch (e) {
         Logger.log(`updateAttendance: could not open folder ${parentFolderId} — ${e.message}`);
-        return false;
+        return "permission_error";
     }
 
     // Search for a sub-folder whose name contains the session date string.
