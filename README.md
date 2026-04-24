@@ -46,13 +46,20 @@ The alert at the end confirms success and shows how long it took. If you need to
 
 ### Checking attendance
 
-Attendance data is pulled automatically from Google Calendar and Google Meet records stored in each team member's Drive folder.
+Attendance data is pulled automatically from Google Meet records stored in each team member's Drive folder.
 
-**Setup → Auto Attendance → Check Today**
+**Auto Attendance → Check Today**
 Checks attendance for today's sessions only. Use this at the end of each day.
 
 **Auto Attendance → Check All**
-Re-checks attendance across all past dates. Existing positive numeric entries and non-numeric manual values are preserved — only blank cells are filled in.
+Re-checks attendance across all past dates in the schedule.
+
+**Auto Attendance → Check Between Dates**
+Opens a date-picker dialog where you select a start and end date. Only session days within that range are re-checked. The end date defaults to the same day as the start date and can be adjusted before confirming.
+
+**What gets preserved vs overwritten**
+
+All three options follow the same rule: a cell is only preserved if it holds a positive number (assumed to be a manually entered GLH value). Blank cells, zeros, and dash (`-`) values are all overwritten with fresh data from the attendance records.
 
 ---
 
