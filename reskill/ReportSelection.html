@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+
+<body>
+    <form id="optionsForm">
+        <? for (var i = 0; i < fullNames.length; i++) { ?>
+        <label>
+            <input type="checkbox" name="student" value="<?= i ?>" <?=(type==partners[i]) ? "checked" : "" ?> >
+            <?= fullNames[i] ?> -
+            <?= partners[i] ?>
+        </label><br>
+        <? } ?>
+        <br>
+        <input type="hidden" name="type" value="<?= type ?>">
+        <button type="button" onclick="submitForm()">Select</button>
+    </form>
+
+    <script>
+        function submitForm() {
+            const data = [];
+            document.querySelectorAll('input[name=student]:not(:checked)').forEach(cb => {
+                data.push(cb.value);
+            });
+            const type = document.querySelector('input[name=type]').value;
+
+            // Replace form content with spinner + message
+            const form = document.getElementById('optionsForm');
+            form.innerHTML = `
+          <div style="text-align:center; padding:20px;">
+            <div class="spinner" style="
+              border: 6px solid #f3f3f3;
+              border-top: 6px solid #3498db;
+              border-radius: 50%;
+              width: 40px;
+              height: 40px;
+              animation: spin 1s linear infinite;
+              margin: 0 auto 10px auto;
+            "></div>
+            <p>Creating report, please wait...</p>
+          </div>
+        `;
+
+            // Define spinner animation in <style> dynamically
+            const style = document.createElement('style');
+            style.innerHTML = `
+          @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+          }
+        `;
+            document.head.appendChild(style);
+
+            // Call Apps Script function
+            google.script.run.withSuccessHandler(() => {
+                google.script.host.close();
+            }).processCheckboxSelection(data, type);
+        }
+    </script>
+</body>
+
+</html>
