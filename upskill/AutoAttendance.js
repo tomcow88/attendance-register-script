@@ -76,32 +76,67 @@ function checkAllAttendance() {
 }
 
 /**
- * Re-checks attendance for every session day between two user-supplied dates (inclusive).
+ * Opens a date-picker dialog for selecting a date range, then checks attendance
+ * for all session days within that range.
  *
- * Prompts for a start and end date, then iterates through the schedule calling
- * checkAttendance() for each matching date.
+ * The actual checking runs via runAttendanceBetweenDates(), called from the
+ * dialog's submit handler using google.script.run.
  */
 function checkAttendanceBetweenDates() {
-    const ui = SpreadsheetApp.getUi();
-
-    const startResponse = ui.prompt("Check Attendance", "Enter start date (YYYY-MM-DD):", ui.ButtonSet.OK_CANCEL);
-    if (startResponse.getSelectedButton() !== ui.Button.OK) return;
-    const startDate = startResponse.getResponseText().trim();
-
-    const endResponse = ui.prompt("Check Attendance", "Enter end date (YYYY-MM-DD):", ui.ButtonSet.OK_CANCEL);
-    if (endResponse.getSelectedButton() !== ui.Button.OK) return;
-    const endDate = endResponse.getResponseText().trim();
-
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
-        ui.alert("Invalid date format. Please use YYYY-MM-DD.");
-        return;
+    const html = HtmlService.createHtmlOutput(`<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 16px; margin: 0; font-size: 13px; }
+    label { display: block; margin-bottom: 12px; }
+    input[type="date"] { display: block; margin-top: 4px; width: 100%; box-sizing: border-box; }
+    button { margin-top: 12px; padding: 6px 14px; cursor: pointer; }
+    #status { margin-top: 10px; color: #555; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <label>Start date<input type="date" id="startDate" required></label>
+  <label>End date<input type="date" id="endDate" required></label>
+  <button id="btn" onclick="run()">Check Attendance</button>
+  <div id="status"></div>
+  <script>
+    function run() {
+      var start = document.getElementById('startDate').value;
+      var end = document.getElementById('endDate').value;
+      if (!start || !end) { alert('Please select both dates.'); return; }
+      if (start > end) { alert('Start date must be on or before end date.'); return; }
+      var btn = document.getElementById('btn');
+      btn.disabled = true;
+      btn.textContent = 'Running…';
+      document.getElementById('status').textContent = 'Checking attendance, please wait…';
+      google.script.run
+        .withSuccessHandler(function(result) {
+          var msg = 'Done! Elapsed time: ' + result.elapsedTime + 's';
+          if (result.hasPermissionErrors) msg += '\\n\\nCould not access one or more Drive folders.';
+          alert(msg);
+          google.script.host.close();
+        })
+        .withFailureHandler(function(err) {
+          alert('Error: ' + err.message);
+          btn.disabled = false;
+          btn.textContent = 'Check Attendance';
+          document.getElementById('status').textContent = '';
+        })
+        .runAttendanceBetweenDates(start, end);
     }
-    if (startDate > endDate) {
-        ui.alert("Start date must be on or before end date.");
-        return;
-    }
+  </script>
+</body>
+</html>`).setWidth(280).setHeight(210);
+    SpreadsheetApp.getUi().showModalDialog(html, 'Check Attendance Between Dates');
+}
 
-    let startTime = new Date();
+/**
+ * Checks attendance for all session days between startDate and endDate (inclusive, YYYY-MM-DD).
+ * Called from the checkAttendanceBetweenDates dialog via google.script.run.
+ * Returns { elapsedTime, hasPermissionErrors } for the dialog to display.
+ */
+function runAttendanceBetweenDates(startDate, endDate) {
+    const startTime = new Date();
 
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     const databaseSheet = spreadsheet.getSheetByName("DATABASE");
@@ -122,12 +157,10 @@ function checkAttendanceBetweenDates() {
         }
     }
 
-    let elapsedTime = new Date() - startTime;
-    let alertMsg = `Finished checking attendance from ${startDate} to ${endDate}\nElapsed time: ${elapsedTime / 1000} seconds`;
-    if (allPermissionErrors.size > 0) {
-        alertMsg += "\n\nCould not access one or more Drive folders. Please check that you have permission to access the attendance folders in Drive and try again.";
-    }
-    ui.alert(alertMsg);
+    return {
+        elapsedTime: Math.round((new Date() - startTime) / 1000),
+        hasPermissionErrors: allPermissionErrors.size > 0,
+    };
 }
 
 /**
