@@ -95,7 +95,7 @@ function checkAttendanceBetweenDates() {
   </style>
 </head>
 <body>
-  <label>Start date<input type="date" id="startDate" required></label>
+  <label>Start date<input type="date" id="startDate" required onchange="document.getElementById('endDate').value = this.value;"></label>
   <label>End date<input type="date" id="endDate" required></label>
   <button id="btn" onclick="run()">Check Attendance</button>
   <div id="status"></div>
