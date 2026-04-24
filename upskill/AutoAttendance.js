@@ -363,7 +363,7 @@ function updateAttendance(
         }
 
         if (attendanceValue.length == 0) {
-            attendanceValue.push(0);
+            attendanceValue.push("-");
             attendanceValues.push(attendanceValue);
         }
     }
