@@ -52,12 +52,14 @@ function checkAllAttendance() {
     const schedule = scheduleData.schedule;
 
     let allPermissionErrors = new Set();
+    const today = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), "yyyy-MM-dd");
 
     for (let i = 0; i < weeks; i++) {
         let week = schedule[i];
 
         for (let j = 0; j < week.length; j++) {
             let date = week[j].date;
+            if (date > today) continue;
             let weekNum = i + 1;
             const { permissionErrors } = checkAttendance(date, weekNum, scheduleData);
             permissionErrors.forEach(id => allPermissionErrors.add(id));
