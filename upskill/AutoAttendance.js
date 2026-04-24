@@ -396,7 +396,7 @@ function updateAttendance(
         }
 
         if (attendanceValue.length == 0) {
-            attendanceValue.push("-");
+            attendanceValue.push(0);
             attendanceValues.push(attendanceValue);
         }
     }
