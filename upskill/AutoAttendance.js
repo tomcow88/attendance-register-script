@@ -7,8 +7,6 @@
  */
 function checkAttendanceToday() {
     let startTime = new Date();
-    // Pass false to use the real current date. Replace with a YYYY-MM-DD string for testing:
-    // let todayDate = '2025-04-28';
     let todayDate = false;
     const currentWeekData = setCurrentWeek(todayDate);
     const currentDate = currentWeekData.todayDate;
@@ -127,17 +125,31 @@ function checkAttendance(todayDate, weekNum, scheduleData) {
                 if (parentFolderId == "null") continue;
 
                 let host = getDeliveryTeam(abreviation);
-                let updatedAttendance = updateAttendance(
-                    parentFolderId,
-                    date,
-                    calendarName,
-                    day,
-                    abreviation,
-                    glh,
-                    j,
-                    i,
-                    host,
-                );
+                let updatedAttendance;
+                for (let attempt = 1; attempt <= 3; attempt++) {
+                    try {
+                        updatedAttendance = updateAttendance(
+                            parentFolderId,
+                            date,
+                            calendarName,
+                            day,
+                            abreviation,
+                            glh,
+                            j,
+                            i,
+                            host,
+                        );
+                        break;
+                    } catch (e) {
+                        if (attempt < 3 && e.message && e.message.toLowerCase().includes("service error")) {
+                            Logger.log(`Drive service error on attempt ${attempt} for ${abreviation} ${date} — retrying in ${attempt * 2}s`);
+                            Utilities.sleep(attempt * 2000);
+                        } else {
+                            Logger.log(`updateAttendance failed for ${abreviation} ${date}: ${e.message}`);
+                            break;
+                        }
+                    }
+                }
                 if (updatedAttendance == "updated") {
                     sessionsUpdated[abreviation] = true;
                 } else if (updatedAttendance == "permission_error") {
@@ -189,27 +201,40 @@ function updateAttendance(
 
     // Search for a sub-folder whose name contains the session date string.
     const folders = parentFolder.searchFolders(`fullText contains '${date}'`);
-    if (!folders.hasNext()) return false;
+    if (!folders.hasNext()) {
+        Logger.log(`updateAttendance [${abreviation} ${date}]: no folder found in ${parentFolderId} matching date '${date}'`);
+        return false;
+    }
 
     let correctFolder;
+    let folderNames = [];
     while (folders.hasNext()) {
         let folder = folders.next();
+        folderNames.push(folder.getName());
         if (folder.getName().includes(calendarName)) {
             correctFolder = folder;
         }
     }
-    if (!correctFolder) return false;
+    if (!correctFolder) {
+        Logger.log(`updateAttendance [${abreviation} ${date}]: no folder matched calendarName '${calendarName}'. Found folders: ${JSON.stringify(folderNames)}`);
+        return false;
+    }
 
     // Find the attendance file within the folder (identified by "Attendance" in the file name).
     const files = correctFolder.getFiles();
     let correctFile;
+    let fileNames = [];
     while (files.hasNext()) {
         let file = files.next();
+        fileNames.push(file.getName());
         if (file.getName().includes("Attendance")) {
             correctFile = file;
         }
     }
-    if (!correctFile) return false;
+    if (!correctFile) {
+        Logger.log(`updateAttendance [${abreviation} ${date}]: no 'Attendance' file in folder '${correctFolder.getName()}'. Files found: ${JSON.stringify(fileNames)}`);
+        return false;
+    }
 
     const spreadsheetFile = SpreadsheetApp.openById(correctFile.getId());
     const attendeeSheet = spreadsheetFile.getSheetByName("Attendees");
@@ -303,12 +328,14 @@ function updateAttendance(
     const currentSessionValues = sessionRange.getValues();
     for (let i = 0; i < currentSessionValues.length; i++) {
         const currentValue = currentSessionValues[i][0];
-        if (currentValue !== "" && currentValue !== 0) {
+        if (currentValue !== "" && currentValue !== 0 && currentValue !== "-") {
             attendanceValues[i] = currentSessionValues[i];
         }
     }
 
+    Logger.log(`updateAttendance [${abreviation} ${date}]: writing ${attendanceValues.length} rows to row ${sessionStartRow}, col ${sessionCol}. attendanceValues: ${JSON.stringify(attendanceValues)}`);
     sessionRange.setValues(attendanceValues);
+    Logger.log(`updateAttendance [${abreviation} ${date}]: setValues completed`);
     lastAttendedRange.setValues(lastAttendedValues);
 
     // Apply the Caveat font to the host signature row so it renders as a handwritten signature.
