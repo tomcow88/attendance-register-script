@@ -76,6 +76,61 @@ function checkAllAttendance() {
 }
 
 /**
+ * Re-checks attendance for every session day between two user-supplied dates (inclusive).
+ *
+ * Prompts for a start and end date, then iterates through the schedule calling
+ * checkAttendance() for each matching date.
+ */
+function checkAttendanceBetweenDates() {
+    const ui = SpreadsheetApp.getUi();
+
+    const startResponse = ui.prompt("Check Attendance", "Enter start date (YYYY-MM-DD):", ui.ButtonSet.OK_CANCEL);
+    if (startResponse.getSelectedButton() !== ui.Button.OK) return;
+    const startDate = startResponse.getResponseText().trim();
+
+    const endResponse = ui.prompt("Check Attendance", "Enter end date (YYYY-MM-DD):", ui.ButtonSet.OK_CANCEL);
+    if (endResponse.getSelectedButton() !== ui.Button.OK) return;
+    const endDate = endResponse.getResponseText().trim();
+
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(startDate) || !/^\d{4}-\d{2}-\d{2}$/.test(endDate)) {
+        ui.alert("Invalid date format. Please use YYYY-MM-DD.");
+        return;
+    }
+    if (startDate > endDate) {
+        ui.alert("Start date must be on or before end date.");
+        return;
+    }
+
+    let startTime = new Date();
+
+    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
+    const databaseSheet = spreadsheet.getSheetByName("DATABASE");
+    const scheduleData = JSON.parse(databaseSheet.getRange(3, 23, 1, 1).getValue());
+    const weeks = scheduleData.weeks;
+    const schedule = scheduleData.schedule;
+
+    let allPermissionErrors = new Set();
+
+    for (let i = 0; i < weeks; i++) {
+        let week = schedule[i];
+        for (let j = 0; j < week.length; j++) {
+            let date = week[j].date;
+            if (date < startDate || date > endDate) continue;
+            const { permissionErrors } = checkAttendance(date, i + 1, scheduleData);
+            permissionErrors.forEach(id => allPermissionErrors.add(id));
+            Utilities.sleep(500);
+        }
+    }
+
+    let elapsedTime = new Date() - startTime;
+    let alertMsg = `Finished checking attendance from ${startDate} to ${endDate}\nElapsed time: ${elapsedTime / 1000} seconds`;
+    if (allPermissionErrors.size > 0) {
+        alertMsg += "\n\nCould not access one or more Drive folders. Please check that you have permission to access the attendance folders in Drive and try again.";
+    }
+    ui.alert(alertMsg);
+}
+
+/**
  * Checks attendance for a single date within a specific week.
  *
  * For each session type (SU, SD, GS, SME, CC), locates the corresponding Google Drive folder

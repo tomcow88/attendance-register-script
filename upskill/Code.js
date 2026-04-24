@@ -43,7 +43,8 @@ function onOpen() {
     const autoAttendanceMenu = ui
         .createMenu("Auto Attendance")
         .addItem("Check Today", "checkAttendanceToday")
-        .addItem("Check All", "checkAllAttendance");
+        .addItem("Check All", "checkAllAttendance")
+        .addItem("Check Between Dates", "checkAttendanceBetweenDates");
     autoAttendanceMenu.addToUi();
 
     // "Reports" menu: generate a spreadsheet report for one named partner, or all partners at once.
