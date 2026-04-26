@@ -132,8 +132,41 @@ Both options name the generated spreadsheet `Partner Report - <current week> - <
 
 ## Short course script
 
-The short course script adds two menus — **Setup** and **Report** — to the spreadsheet UI. These features are not yet implemented:
+The short course script adds two menus — **Setup** and **Report** — to the spreadsheet UI.
 
-- **Setup → Setup Sheets** — will create the working sheets from templates
-- **Report → Generate Student Report** — will generate a per-student attendance report
-- **Report → Generate Partner Report** — will generate a per-partner attendance report
+**Setup → Setup Sheets**
+First run creates a SETUP sheet from the template. Fill in the cohort configuration, then run again to build the ATTENDANCE and SUMMARY sheets. SETUP rows 1–13 (col B) hold cohort metadata; rows 14+ hold student first names (col A) and last names (col B).
+
+**Report → Generate Student Report**
+Opens a checkbox dialog listing all students. Check the students to include and submit to generate a report spreadsheet containing only their SUMMARY and ATTENDANCE rows.
+
+**Report → Generate Partner Report**
+Prompts for a funding partner name, opens the same checkbox dialog with that partner's students pre-checked, then generates a filtered report spreadsheet.
+
+---
+
+## WECA reports
+
+The WECA reports script generates individual Training Completion Declaration Google Docs for each learner from a spreadsheet of GLH data. It adds a single **Custom Menu → Generate Reports** item to the UI.
+
+### Setup
+
+Paste the script into the Apps Script editor of a Google Spreadsheet containing learner GLH data. The active sheet must have the following columns (row 1 = headers, row 2+ = learner data):
+
+| Col | Value |
+|---|---|
+| A | First name |
+| B | Last name |
+| C | Total GLH |
+| D | % GLH (decimal, e.g. 0.9427) |
+| E | Total Employability GLH |
+| F | Total Careers GLH |
+| G | Guided Behaviours & Workplace Skills GLH |
+| H | Pastoral Support Hours |
+
+### Usage
+
+1. Open **Custom Menu → Generate Reports**
+2. Paste the URL of the Training Completion Declaration template Google Doc
+3. One copy of the template is created per learner row, with all `{{ Placeholder }}` fields substituted with the learner's data
+4. Generated docs are saved to the root of My Drive. A success alert confirms completion; any failures are listed by learner name.
