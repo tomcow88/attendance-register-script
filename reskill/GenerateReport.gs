@@ -4,31 +4,7 @@
  * All students are unchecked by default — the report includes only checked students.
  */
 function generateStudentReport() {
-    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-    const summarySheet = spreadsheet.getSheetByName("SUMMARY");
-    const numOfStudents = summarySheet.getRange(5, 6, 1, 1).getValue();
-    const firstNames = summarySheet
-        .getRange(14, 1, numOfStudents, 1)
-        .getValues()
-        .flat();
-    const lastNames = summarySheet
-        .getRange(14, 2, numOfStudents, 1)
-        .getValues()
-        .flat();
-    const partners = summarySheet
-        .getRange(14, 3, numOfStudents, 1)
-        .getValues()
-        .flat();
-    const fullNames = firstNames.map((first, i) => `${first} ${lastNames[i]}`);
-
-    const template = HtmlService.createTemplateFromFile("ReportSelection");
-    template.fullNames = fullNames;
-    template.partners = partners;
-    template.type = "Student";
-    const height = Math.min(80 + fullNames.length * 24, 500);
-    const html = template.evaluate().setHeight(height).setWidth(300);
-
-    SpreadsheetApp.getUi().showModalDialog(html, "Choose Students");
+    openReportDialog("Student");
 }
 
 /**
@@ -38,31 +14,26 @@ function generateStudentReport() {
  * the template uses to pre-check matching rows.
  */
 function generatePartnerReport() {
-    const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-    const summarySheet = spreadsheet.getSheetByName("SUMMARY");
-    const numOfStudents = summarySheet.getRange(5, 6, 1, 1).getValue();
-    const firstNames = summarySheet
-        .getRange(14, 1, numOfStudents, 1)
-        .getValues()
-        .flat();
-    const lastNames = summarySheet
-        .getRange(14, 2, numOfStudents, 1)
-        .getValues()
-        .flat();
-    const partners = summarySheet
-        .getRange(14, 3, numOfStudents, 1)
-        .getValues()
-        .flat();
-    const fullNames = firstNames.map((first, i) => `${first} ${lastNames[i]}`);
+    const response = SpreadsheetApp.getUi().prompt("Type in what partner you want").getResponseText();
+    openReportDialog(response);
+}
 
-    const ui = SpreadsheetApp.getUi();
-    const partnerPrompt = ui.prompt("Type in what partner you want");
-    const response = partnerPrompt.getResponseText();
+/**
+ * Reads student data from SUMMARY and opens the ReportSelection dialog.
+ * `type` is either "Student" (no pre-checks) or a partner name (pre-checks matching students).
+ */
+function openReportDialog(type) {
+    const summarySheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("SUMMARY");
+    const numOfStudents = summarySheet.getRange(5, 6, 1, 1).getValue();
+    const firstNames = summarySheet.getRange(14, 1, numOfStudents, 1).getValues().flat();
+    const lastNames = summarySheet.getRange(14, 2, numOfStudents, 1).getValues().flat();
+    const partners = summarySheet.getRange(14, 3, numOfStudents, 1).getValues().flat();
+    const fullNames = firstNames.map((first, i) => `${first} ${lastNames[i]}`);
 
     const template = HtmlService.createTemplateFromFile("ReportSelection");
     template.fullNames = fullNames;
     template.partners = partners;
-    template.type = response;
+    template.type = type;
     const height = Math.min(80 + fullNames.length * 24, 500);
     const html = template.evaluate().setHeight(height).setWidth(300);
 
