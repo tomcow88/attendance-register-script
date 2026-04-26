@@ -108,7 +108,7 @@ function setupSummary() {
         `=IF(INDIRECT("'DATABASE'!" & ADDRESS(ROW() + 1, 28)) = "Yes", "Yes", IF(SUM(INDIRECT("'RECORDS'!" & ADDRESS(21 + (15 * ($K$8 + 7)), 30)), INDIRECT("'RECORDS'!" & ADDRESS(21 + (15 * ($K$8 + 7)), 41)), INDIRECT("'RECORDS'!" & ADDRESS(21 + (15 * ($K$8 + 7)), 52))) <= 0, "-----", IF(SUM(INDIRECT("'RECORDS'!" & ADDRESS((21 + ROW()) + (15 * ($K$8 + 7)), 30)), INDIRECT("'RECORDS'!" & ADDRESS((21 + ROW()) + (15 * ($K$8 + 7)), 41)), INDIRECT("'RECORDS'!" & ADDRESS((21 + ROW()) + (15 * ($K$8 + 7)), 52))) > 0, "Yes", "No")))`,
     );
 
-    // Copy the first student row down for all remaining students, then overwrite names from DATABASE.
+    // Copy the first student row down for all remaining students, then overwrite names and partner from DATABASE.
     const studentRange = summarySheet.getRange(2, 1, 1, 9);
     for (let i = 1; i < numOfStudents; i++) {
         studentRange.copyTo(summarySheet.getRange(2 + i, 1, 1, 9));
@@ -116,6 +116,58 @@ function setupSummary() {
 
     summarySheet.getRange(2, 1, numOfStudents, 1).setValues(databaseSheet.getRange(3, 2, numOfStudents, 1).getValues());
     summarySheet.getRange(2, 2, numOfStudents, 1).setValues(databaseSheet.getRange(3, 3, numOfStudents, 1).getValues());
+    summarySheet.getRange(2, 3, numOfStudents, 1).setValues(databaseSheet.getRange(3, 6, numOfStudents, 1).getValues());
+}
+
+/**
+ * Handles edits on the SETUP sheet.
+ *
+ * Two behaviours:
+ *  - Col N row 3 (first partner field) edited: auto-fills col D with that value for every
+ *    student row (col A non-empty) that doesn't already have a partner assigned.
+ *  - Col A rows 3+ edited: applies dropdown validation to col D for that row (sourced from
+ *    N3:N7) and auto-fills col D with the N3 default if col D is still empty.
+ *    Handles pasted ranges of multiple rows.
+ */
+function onSetupEdit(e, sheet) {
+    const startRow = e.range.getRow();
+    const col = e.range.getColumn();
+    const numRows = e.range.getNumRows();
+
+    const partnerValidation = SpreadsheetApp.newDataValidation()
+        .requireValueInRange(sheet.getRange("N3:N7"), true)
+        .setAllowInvalid(true)
+        .build();
+
+    // N3 (col 14) filled → populate col D for existing student rows with no partner yet.
+    if (startRow === 3 && col === 14) {
+        const defaultPartner = sheet.getRange(3, 14).getValue();
+        if (!defaultPartner) return;
+        const lastRow = sheet.getLastRow();
+        for (let r = 3; r <= lastRow; r++) {
+            const hasName = sheet.getRange(r, 1).getValue() && sheet.getRange(r, 2).getValue();
+            if (hasName && !sheet.getRange(r, 4).getValue()) {
+                sheet.getRange(r, 4).setDataValidation(partnerValidation).setValue(defaultPartner);
+            }
+        }
+        return;
+    }
+
+    // Col A or B edited → apply dropdown and default col D once both first and last name are present.
+    if ((col === 1 || col === 2) && startRow >= 3) {
+        const defaultPartner = sheet.getRange(3, 14).getValue();
+        for (let r = startRow; r < startRow + numRows; r++) {
+            if (r < 3) continue;
+            const hasName = sheet.getRange(r, 1).getValue() && sheet.getRange(r, 2).getValue();
+            const partnerCell = sheet.getRange(r, 4);
+            if (hasName) {
+                partnerCell.setDataValidation(partnerValidation);
+                if (!partnerCell.getValue() && defaultPartner) {
+                    partnerCell.setValue(defaultPartner);
+                }
+            }
+        }
+    }
 }
 
 /**
@@ -135,6 +187,11 @@ function formatDate(date) {
 function onEdit(e) {
     const ui = SpreadsheetApp.getUi();
     const sheet = e.range.getSheet();
+
+    if (sheet.getName() === "SETUP") {
+        onSetupEdit(e, sheet);
+        return;
+    }
 
     if (sheet.getName() !== "SUMMARY") return;
 
