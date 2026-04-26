@@ -300,9 +300,9 @@ function updateAttendance(
     const fallbackKeywords = {
         SU: ["stand-up", "stand up"],
         SD: ["stand-down", "stand down"],
-        GS: ["masterclass", "guest speaker", "& gs", "gs &"],
-        SME: ["data coach", "sme"],
-        CC: ["guided", "career coach"],
+        GS: ["guest speaker", "& gs", "gs &"],
+        SME: ["masterclass", "subject matter expert"],
+        CC: ["guided", "career coach", "coach"],
     };
 
     let correctFolder;
