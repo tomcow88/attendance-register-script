@@ -300,12 +300,13 @@ function updateAttendance(
     const fallbackKeywords = {
         SU: ["stand-up", "stand up"],
         SD: ["stand-down", "stand down"],
-        GS: ["guided session", "guided", "& gs", "gs &"],
+        GS: ["guided session", "& gs", "gs &"],
         SME: ["masterclass", "subject matter expert"],
-        CC: ["coding coach", "coach"],
+        CC: ["coding coach"],
     };
 
     let correctFolder;
+    let matchType;
     let folderNames = [];
     while (folders.hasNext()) {
         let folder = folders.next();
@@ -313,14 +314,17 @@ function updateAttendance(
         folderNames.push(folder.getName());
         if (folderNameLower.includes(calendarName.toLowerCase())) {
             correctFolder = folder;
+            matchType = "primary";
         } else if (fallbackKeywords[abreviation] && fallbackKeywords[abreviation].some(kw => folderNameLower.includes(kw))) {
             correctFolder = folder;
+            matchType = "fallback";
         }
     }
     if (!correctFolder) {
         Logger.log(`updateAttendance [${abreviation} ${date}]: no folder matched calendarName '${calendarName}'. Found folders: ${JSON.stringify(folderNames)}`);
         return false;
     }
+    Logger.log(`updateAttendance [${abreviation} ${date}]: matched folder '${correctFolder.getName()}' via ${matchType}`);
 
     // Find the attendance file within the folder (identified by "Attendance" in the file name).
     const files = correctFolder.getFiles();
