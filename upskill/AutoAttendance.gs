@@ -425,10 +425,11 @@ function updateAttendance(
     const recordsSheet = spreadsheet.getSheetByName("RECORDS");
     const sessionRange = recordsSheet.getRange(sessionStartRow, sessionCol, numOfStudents + 1, 1);
 
-    // Preserve any existing non-empty, non-zero value — these are assumed to be manually entered.
-    // Zero is still re-evaluated since it's indistinguishable from a previous auto-check result.
+    // Preserve any existing non-empty, non-zero value in student rows — these are assumed to be
+    // manually entered. The signature row (last row) is always overwritten so stale signatures
+    // from previous runs do not persist after a re-check.
     const currentSessionValues = sessionRange.getValues();
-    for (let i = 0; i < currentSessionValues.length; i++) {
+    for (let i = 0; i < currentSessionValues.length - 1; i++) {
         const currentValue = currentSessionValues[i][0];
         if (currentValue !== "" && currentValue !== 0 && currentValue !== "-") {
             attendanceValues[i] = currentSessionValues[i];

@@ -170,6 +170,8 @@ function getCurrentWeekData(todayDate) {
 
     const startDateTime = getStartOrEndDate("start", "dateTime");
     const endDateTime = getStartOrEndDate("end", "dateTime");
+    // Push to end of day so the last cohort day is not prematurely treated as "Finished".
+    endDateTime.setHours(23, 59, 59, 999);
 
     let todayDateTime = todayDate ? new Date(todayDate) : new Date();
 
