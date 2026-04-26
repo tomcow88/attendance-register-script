@@ -294,12 +294,26 @@ function updateAttendance(
         return false;
     }
 
+    // Fallback keywords per session type — used when the Drive folder name diverges from the
+    // calendar name (e.g. "Data coach 2509DBC" vs "Data coach session 2509DBC") or when two
+    // sessions share one folder (e.g. "Stand-Up & GS 2509DBC" should match both SU and GS).
+    const fallbackKeywords = {
+        SU: ["stand-up", "stand up"],
+        SD: ["stand-down", "stand down"],
+        GS: ["masterclass", "guest speaker", "& gs", "gs &"],
+        SME: ["data coach", "sme"],
+        CC: ["guided", "career coach"],
+    };
+
     let correctFolder;
     let folderNames = [];
     while (folders.hasNext()) {
         let folder = folders.next();
+        let folderNameLower = folder.getName().toLowerCase();
         folderNames.push(folder.getName());
-        if (folder.getName().includes(calendarName)) {
+        if (folderNameLower.includes(calendarName.toLowerCase())) {
+            correctFolder = folder;
+        } else if (fallbackKeywords[abreviation] && fallbackKeywords[abreviation].some(kw => folderNameLower.includes(kw))) {
             correctFolder = folder;
         }
     }
