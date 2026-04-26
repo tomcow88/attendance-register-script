@@ -63,13 +63,24 @@ function createSheetsFromTemplates() {
  */
 function createNewSetupSheet() {
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
-    const oldSetupSheet = spreadsheet.getSheetByName("SETUP");
 
-    if (oldSetupSheet) spreadsheet.deleteSheet(oldSetupSheet);
+    // Rename the old SETUP sheet first (if it exists) so we can safely name the new one "SETUP".
+    // We delete the old one after the new sheet is visible to avoid the "can't remove all visible
+    // sheets" error that occurs when SETUP is the only visible sheet at the time of deletion.
+    const oldSetupSheet = spreadsheet.getSheetByName("SETUP");
+    if (oldSetupSheet) oldSetupSheet.setName("SETUP_OLD");
 
     const setupSheet = spreadsheet.getSheetByName("TEMPLATE_SETUP").copyTo(spreadsheet);
     setupSheet.setName("SETUP");
     setupSheet.showSheet();
+    spreadsheet.setActiveSheet(setupSheet);
+
+    const staleSheet = spreadsheet.getSheetByName("SETUP_OLD");
+    if (staleSheet) spreadsheet.deleteSheet(staleSheet);
+
+    // Ensure col D starts with no validation — it is applied row-by-row via onEdit
+    // as student names are entered, so a blanket pre-applied dropdown is not wanted.
+    setupSheet.getRange(3, 4, 100, 1).clearDataValidations();
 
     return setupSheet;
 }
