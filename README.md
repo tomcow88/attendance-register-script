@@ -28,9 +28,10 @@ Both scripts add custom menus to the spreadsheet UI. There is no installation st
 Before running setup, fill in the `SETUP` sheet with:
 
 - **Student names and email addresses** (first name, last name, email in columns A–C, one row per learner, starting at row 3)
-- **Calendar names** for each session type (column F): Stand Up, Stand Down, Guest Speaker, SME, Career Coach
-- **Delivery team details** (columns I–K): name, email, and Google Drive folder URL for the Facilitator, SME, and Career Coach
-- **Cohort metadata** (columns M–O): funding partner, location (e.g. `IE` for Ireland, or any value for England & Wales), and start date
+- **Per-student funding partner** (column D, optional): a dropdown populated from the partner list in column N. Defaults to the first entry in N3 when a student name is entered. Leave blank to use the cohort default for all learners — only needed when a cohort has students from more than one funding partner
+- **Calendar names** for each session type (column G): Stand Up, Stand Down, Guest Speaker, SME, Career Coach
+- **Delivery team details** (columns J–L): name, email, and Google Drive folder URL for the Facilitator, SME, and Career Coach
+- **Cohort metadata** (columns N–P): funding partner list (N3:N7 — add one partner per row, up to five), location (e.g. `IE` for Ireland, or any value for England & Wales), and start date
 
 Once the SETUP sheet is complete, open the **Setup** menu and click **Auto Setup Steps**. This runs all five steps in sequence:
 
