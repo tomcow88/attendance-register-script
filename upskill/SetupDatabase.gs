@@ -36,6 +36,11 @@ function setupStudentData() {
         .getRange(3, 3, numOfStudents, 1)
         .getValues()
         .flat();
+    let studentPartners = setupSheet
+        .getRange(3, 4, numOfStudents, 1)
+        .getValues()
+        .flat();
+    const defaultPartner = setupSheet.getRange(3, 14, 1, 1).getValue().toString().trim();
 
     for (let i = 0; i < numOfStudents; i++) {
         let firstName = studentFirstNames[i];
@@ -49,6 +54,7 @@ function setupStudentData() {
         let fullName = firstName + " " + lastName;
         let meetName = firstName;
         let meetEmail = getMeetEmail(email);
+        let partner = studentPartners[i] ? studentPartners[i].toString().trim() : defaultPartner;
 
         let studentRow = 3 + i;
 
@@ -58,6 +64,7 @@ function setupStudentData() {
         // Meet names and emails are stored as JSON arrays to support multiple values per learner.
         databaseSheet.getRange(studentRow, 4, 1, 1).setValue(`["${meetName}"]`);
         databaseSheet.getRange(studentRow, 5, 1, 1).setValue(`["${meetEmail}"]`);
+        databaseSheet.getRange(studentRow, 6, 1, 1).setValue(partner);
     }
 }
 
@@ -94,11 +101,11 @@ function setupSessionsData() {
     const recordsLastCol = recordsSheet.getLastColumn();
 
     // Read calendar names for each session type from SETUP.
-    const setupCalSU = setupSheet.getRange(3, 6, 1, 1).getValue();
-    const setupCalSD = setupSheet.getRange(4, 6, 1, 1).getValue();
-    const setupCalGS = setupSheet.getRange(5, 6, 1, 1).getValue();
-    const setupCalSME = setupSheet.getRange(6, 6, 1, 1).getValue();
-    const setupCalCC = setupSheet.getRange(7, 6, 1, 1).getValue();
+    const setupCalSU = setupSheet.getRange(3, 7, 1, 1).getValue();
+    const setupCalSD = setupSheet.getRange(4, 7, 1, 1).getValue();
+    const setupCalGS = setupSheet.getRange(5, 7, 1, 1).getValue();
+    const setupCalSME = setupSheet.getRange(6, 7, 1, 1).getValue();
+    const setupCalCC = setupSheet.getRange(7, 7, 1, 1).getValue();
 
     databaseSheet.getRange(3, 11, 1, 1).setValue(`["${setupCalSU}"]`);
     databaseSheet.getRange(4, 11, 1, 1).setValue(`["${setupCalSD}"]`);
@@ -143,19 +150,19 @@ function setupDeliveryTeamData() {
     const setupSheet = spreadsheet.getSheetByName("SETUP");
     const databaseSheet = spreadsheet.getSheetByName("DATABASE");
 
-    const setupFacName = setupSheet.getRange(3, 9, 1, 1).getValue();
-    const setupFacEmail = setupSheet.getRange(3, 10, 1, 1).getValue();
-    const setupFacUrl = setupSheet.getRange(3, 11, 1, 1).getValue();
+    const setupFacName = setupSheet.getRange(3, 10, 1, 1).getValue();
+    const setupFacEmail = setupSheet.getRange(3, 11, 1, 1).getValue();
+    const setupFacUrl = setupSheet.getRange(3, 12, 1, 1).getValue();
     const facFolderId = getFolderIdFromUrl(setupFacUrl);
 
-    const setupSmeName = setupSheet.getRange(4, 9, 1, 1).getValue();
-    const setupSmeEmail = setupSheet.getRange(4, 10, 1, 1).getValue();
-    const setupSmeUrl = setupSheet.getRange(4, 11, 1, 1).getValue();
+    const setupSmeName = setupSheet.getRange(4, 10, 1, 1).getValue();
+    const setupSmeEmail = setupSheet.getRange(4, 11, 1, 1).getValue();
+    const setupSmeUrl = setupSheet.getRange(4, 12, 1, 1).getValue();
     const smeFolderId = getFolderIdFromUrl(setupSmeUrl);
 
-    const setupCcName = setupSheet.getRange(5, 9, 1, 1).getValue();
-    const setupCcEmail = setupSheet.getRange(5, 10, 1, 1).getValue();
-    const setupCcUrl = setupSheet.getRange(5, 11, 1, 1).getValue();
+    const setupCcName = setupSheet.getRange(5, 10, 1, 1).getValue();
+    const setupCcEmail = setupSheet.getRange(5, 11, 1, 1).getValue();
+    const setupCcUrl = setupSheet.getRange(5, 12, 1, 1).getValue();
     const ccFolderId = getFolderIdFromUrl(setupCcUrl);
 
     // Names and emails are stored as JSON arrays to support future multi-value expansion.
@@ -196,9 +203,9 @@ function setupCohortData() {
     const setupSheet = spreadsheet.getSheetByName("SETUP");
     const databaseSheet = spreadsheet.getSheetByName("DATABASE");
 
-    const partner = setupSheet.getRange(3, 13, 1, 1).getValue();
-    const location = setupSheet.getRange(3, 14, 1, 1).getValue();
-    const startDate = setupSheet.getRange(3, 15, 1, 1).getValue();
+    const partner = setupSheet.getRange(3, 14, 1, 1).getValue();
+    const location = setupSheet.getRange(3, 15, 1, 1).getValue();
+    const startDate = setupSheet.getRange(3, 16, 1, 1).getValue();
 
     if (!(partner && location && startDate)) return;
 
