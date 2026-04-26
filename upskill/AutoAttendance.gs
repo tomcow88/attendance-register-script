@@ -302,7 +302,7 @@ function updateAttendance(
         SD: ["stand-down", "stand down"],
         GS: ["guided session", "& gs", "gs &"],
         SME: ["masterclass", "subject matter expert"],
-        CC: ["coding coach"],
+        CC: ["coding coach", "data coach"],
     };
 
     let correctFolder;
