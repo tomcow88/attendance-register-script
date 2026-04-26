@@ -1,9 +1,28 @@
+/**
+ * Sets up the working sheets from the SETUP sheet configuration.
+ *
+ * Two-phase behaviour:
+ *  - If SETUP does not yet exist, copies it from TEMPLATE_SETUP and returns early
+ *    so the user can fill it in before running again.
+ *  - If SETUP exists and has at least one student, creates (or reuses) ATTENDANCE
+ *    and SUMMARY from their templates, then populates both with cohort data.
+ *
+ * ATTENDANCE layout: one block per week (or extra session), each block is
+ * (3 + numOfStudents) rows. Columns are: first name, last name, one checkbox
+ * column per session, then a total GLH column.
+ *
+ * SUMMARY layout: rows 1–13 = cohort metadata, rows 14+ = one row per student.
+ */
 function setupSheets() {
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     let setupSheet = spreadsheet.getSheetByName("SETUP");
 
     if (!setupSheet) {
         const templateSetupSheet = spreadsheet.getSheetByName("TEMPLATE_SETUP");
+        if (!templateSetupSheet) {
+            SpreadsheetApp.getUi().alert("Setup failed: TEMPLATE_SETUP sheet not found.");
+            return;
+        }
         const newSetupSheet = templateSetupSheet.copyTo(spreadsheet);
         newSetupSheet.setName("SETUP");
         return;
@@ -22,6 +41,7 @@ function setupSheets() {
     const glhPerSession = setupSheet.getRange(10, 2, 1, 1).getValue();
     let numOfExtraSessions = setupSheet.getRange(11, 2, 1, 1).getValue();
     numOfExtraSessions = Number(numOfExtraSessions);
+    // Total blocks = standard weeks + any extra sessions appended at the end.
     let numOfWeeks = Number(numOfWeeksOnly) + numOfExtraSessions;
 
     const startDate = setupSheet.getRange(4, 2, 1, 1).getDisplayValue();
@@ -31,9 +51,11 @@ function setupSheets() {
 
     let attendanceSheet = spreadsheet.getSheetByName("ATTENDANCE");
     if (!attendanceSheet) {
-        const templateAttendanceSheet = spreadsheet.getSheetByName(
-            "TEMPLATE_ATTENDANCE",
-        );
+        const templateAttendanceSheet = spreadsheet.getSheetByName("TEMPLATE_ATTENDANCE");
+        if (!templateAttendanceSheet) {
+            SpreadsheetApp.getUi().alert("Setup failed: TEMPLATE_ATTENDANCE sheet not found.");
+            return;
+        }
         attendanceSheet = templateAttendanceSheet.copyTo(spreadsheet);
         attendanceSheet.setName("ATTENDANCE");
         attendanceSheet.showSheet();
@@ -42,6 +64,9 @@ function setupSheets() {
     spreadsheet.moveActiveSheet(1);
 
     if (numOfSessionsPerWeek > 1) {
+        // The template has one session column (col 3). Insert additional columns
+        // for each session, copy the template column's formatting into each, then
+        // delete the original template column once all copies are in place.
         const defaultAttendanceCol = attendanceSheet.getRange(1, 3, 4, 1);
         attendanceSheet.insertColumnsAfter(3, numOfSessionsPerWeek);
 
@@ -55,6 +80,8 @@ function setupSheets() {
 
         attendanceSheet.deleteColumn(3);
 
+        // Total GLH formula: counts checked sessions for this student across all
+        // session columns and multiplies by GLH per session from SUMMARY.
         let endingLetter = numberToLetter(numOfSessionsPerWeek + 2);
         attendanceSheet
             .getRange(4, 3 + numOfSessionsPerWeek, 1, 1)
@@ -63,6 +90,8 @@ function setupSheets() {
 
     const totalAttendanceCols = 5 + numOfSessionsPerWeek;
 
+    // Expand the single template student row to cover all students, then overwrite
+    // the name columns with actual first and last names from SETUP.
     const defaultStudentAttendanceRange = attendanceSheet.getRange(
         4,
         1,
@@ -76,6 +105,8 @@ function setupSheets() {
     lastNamesRange.copyTo(attendanceSheet.getRange(4, 2, numOfStudents, 1));
     attendanceSheet.getRange(2, 2, 1, 1).setValue(startDate);
 
+    // Copy the first week block (rows 2 to 3+numOfStudents) once per remaining week,
+    // placing each block immediately below the previous one.
     const rowDiff = 3 + numOfStudents;
     const defaultAttendanceRange = attendanceSheet.getRange(
         2,
@@ -90,6 +121,7 @@ function setupSheets() {
         );
         let heading;
 
+        // Weeks beyond the standard count are labelled as extra sessions.
         if (week - numOfWeeksOnly > 0) {
             heading = `Extra Session ${week - numOfWeeksOnly}`;
         } else {
@@ -102,8 +134,11 @@ function setupSheets() {
 
     let summarySheet = spreadsheet.getSheetByName("SUMMARY");
     if (!summarySheet) {
-        const templateSummarySheet =
-            spreadsheet.getSheetByName("TEMPLATE_SUMMARY");
+        const templateSummarySheet = spreadsheet.getSheetByName("TEMPLATE_SUMMARY");
+        if (!templateSummarySheet) {
+            SpreadsheetApp.getUi().alert("Setup failed: TEMPLATE_SUMMARY sheet not found.");
+            return;
+        }
         summarySheet = templateSummarySheet.copyTo(spreadsheet);
         summarySheet.setName("SUMMARY");
         summarySheet.showSheet();
@@ -116,6 +151,8 @@ function setupSheets() {
     summarySheet.getRange(4, 6, 1, 1).setValue(numOfExtraSessions);
     summarySheet.getRange(5, 6, 1, 1).setValue(numOfStudents);
 
+    // SUMIFS formula: sums the total GLH column in ATTENDANCE for rows where
+    // first name and last name match the student's row in SUMMARY.
     let totalGlhLetter = numberToLetter(3 + numOfSessionsPerWeek);
     let totalGlhFormula = `=SUMIFS(ATTENDANCE!$${totalGlhLetter}:$${totalGlhLetter}, ATTENDANCE!$A:$A, $A14, ATTENDANCE!$B:$B, $B14)`;
     summarySheet.getRange(14, 5, 1, 1).setValue(totalGlhFormula);
@@ -125,6 +162,8 @@ function setupSheets() {
     firstNamesRange.copyTo(summarySheet.getRange(14, 1, numOfStudents, 1));
     lastNamesRange.copyTo(summarySheet.getRange(14, 2, numOfStudents, 1));
 
+    // Re-set formulas on the ATTENDANCE total column to force recalculation after
+    // the sheet has been fully populated.
     const attendanceCol = attendanceSheet.getRange(
         2,
         3 + numOfSessionsPerWeek,
@@ -138,22 +177,23 @@ function setupSheets() {
     spreadsheet.moveActiveSheet(1);
 }
 
+/**
+ * Adds a number of weeks to a dd/mm/yyyy date string and returns the result
+ * in the same format.
+ */
 function addWeeks(dateStr, weeks) {
-    // Parse the plain text date (dd/mm/yyyy)
     const [day, month, year] = dateStr.split("/").map(Number);
     const date = new Date(year, month - 1, day);
-
-    // Add weeks (7 days * number of weeks)
     date.setDate(date.getDate() + weeks * 7);
-
-    // Format back to dd/mm/yyyy
     const newDay = String(date.getDate()).padStart(2, "0");
     const newMonth = String(date.getMonth() + 1).padStart(2, "0");
-    const newYear = date.getFullYear();
-
-    return `${newDay}/${newMonth}/${newYear}`;
+    return `${newDay}/${newMonth}/${date.getFullYear()}`;
 }
 
+/**
+ * Converts a 1-based column number to its spreadsheet letter(s) (e.g. 1 → "A", 28 → "AB").
+ * Uses base-26 arithmetic with no true zero digit — column 26 is "Z", not "Z0".
+ */
 function numberToLetter(n) {
     if (n < 1) return "";
     let letters = "";
