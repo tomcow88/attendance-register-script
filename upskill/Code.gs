@@ -453,7 +453,9 @@ function addReturningLearner() {
             return;
         }
 
-        const priorNumStudents = priorDatabase.getRange(3, 23, 1, 1).getValue();
+        // Col 23 = new layout (partner column added); col 22 = old layout. Fall back for prior cohorts.
+        const priorNumStudents = priorDatabase.getRange(3, 23, 1, 1).getValue()
+            || priorDatabase.getRange(3, 22, 1, 1).getValue();
         let priorStudentDatabaseRow = -1;
 
         for (let i = 0; i < priorNumStudents; i++) {
@@ -544,7 +546,7 @@ function addReturningLearner() {
 
 /**
  * Re-reads the prior cohort spreadsheet for each returning learner in DATABASE (those with
- * a URL in column 25) and refreshes the prior GLH and hackathon data in columns 26–28.
+ * a URL in column 26) and refreshes the prior GLH and hackathon data in columns 27–29.
  *
  * Learners are matched by their stored meet email (DATABASE col 5) against the prior DATABASE.
  * Any inaccessible spreadsheets or unmatched learners are listed in the summary alert.
@@ -583,7 +585,9 @@ function refreshPriorGLH() {
                 continue;
             }
 
-            const priorNumStudents = priorDatabase.getRange(3, 23, 1, 1).getValue();
+            // Col 23 = new layout (partner column added); col 22 = old layout. Fall back for prior cohorts.
+            const priorNumStudents = priorDatabase.getRange(3, 23, 1, 1).getValue()
+                || priorDatabase.getRange(3, 22, 1, 1).getValue();
             let priorStudentDatabaseRow = -1;
 
             for (let j = 0; j < priorNumStudents; j++) {
