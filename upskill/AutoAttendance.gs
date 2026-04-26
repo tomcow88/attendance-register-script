@@ -294,37 +294,20 @@ function updateAttendance(
         return false;
     }
 
-    // Fallback keywords per session type — used when the Drive folder name diverges from the
-    // calendar name (e.g. "Data coach 2509DBC" vs "Data coach session 2509DBC") or when two
-    // sessions share one folder (e.g. "Stand-Up & GS 2509DBC" should match both SU and GS).
-    const fallbackKeywords = {
-        SU: ["stand-up", "stand up"],
-        SD: ["stand-down", "stand down"],
-        GS: ["guided session", "& gs", "gs &"],
-        SME: ["masterclass", "subject matter expert"],
-        CC: ["coding coach", "data coach"],
-    };
-
     let correctFolder;
-    let matchType;
     let folderNames = [];
     while (folders.hasNext()) {
         let folder = folders.next();
-        let folderNameLower = folder.getName().toLowerCase();
         folderNames.push(folder.getName());
-        if (folderNameLower.includes(calendarName.toLowerCase())) {
+        if (folder.getName().toLowerCase().includes(calendarName.toLowerCase())) {
             correctFolder = folder;
-            matchType = "primary";
-        } else if (fallbackKeywords[abreviation] && fallbackKeywords[abreviation].some(kw => folderNameLower.includes(kw))) {
-            correctFolder = folder;
-            matchType = "fallback";
         }
     }
     if (!correctFolder) {
         Logger.log(`updateAttendance [${abreviation} ${date}]: no folder matched calendarName '${calendarName}'. Found folders: ${JSON.stringify(folderNames)}`);
         return false;
     }
-    Logger.log(`updateAttendance [${abreviation} ${date}]: matched folder '${correctFolder.getName()}' via ${matchType}`);
+    Logger.log(`updateAttendance [${abreviation} ${date}]: matched folder '${correctFolder.getName()}'`);
 
     // Find the attendance file within the folder (identified by "Attendance" in the file name).
     const files = correctFolder.getFiles();
