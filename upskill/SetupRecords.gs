@@ -168,25 +168,22 @@ function getCurrentWeekData(todayDate) {
     const weeks = scheduleData.weeks;
     const schedule = scheduleData.schedule;
 
-    const startDateTime = getStartOrEndDate("start", "dateTime");
-    const endDateTime = getStartOrEndDate("end", "dateTime");
-    // Push to end of day so the last cohort day is not prematurely treated as "Finished".
-    endDateTime.setHours(23, 59, 59, 999);
+    const startDate = getStartOrEndDate("start", "date");
+    const endDate = getStartOrEndDate("end", "date");
 
     let todayDateTime = todayDate ? new Date(todayDate) : new Date();
-
-    // Set to 22:00 so any session earlier in the day is treated as "today" without overlap issues.
     todayDateTime.setHours(22, 0, 0, 0);
+    const todayDateStr = todayDateTime.toISOString().split("T")[0];
 
     let currentWeekNum = 0;
     let currentDay = 0;
     let currentWeek;
 
-    if (todayDateTime > endDateTime) {
+    if (todayDateStr > endDate) {
         currentWeek = "Finished";
         currentWeekNum = 16;
         currentDay = 80;
-    } else if (todayDateTime < startDateTime) {
+    } else if (todayDateStr < startDate) {
         currentWeek = "Not Started";
         currentWeekNum = 1;
         currentDay = 1;
@@ -196,16 +193,14 @@ function getCurrentWeekData(todayDate) {
 
             // For all weeks except the last, skip ahead if today is on or after the next week's start.
             if (i < weeks - 1) {
-                let firstDateTimeOfNextWeek = new Date(schedule[currentWeekNum][0].date);
-                firstDateTimeOfNextWeek.setHours(6, 0, 0, 0);
-                if (todayDateTime >= firstDateTimeOfNextWeek) continue;
+                if (todayDateStr >= schedule[currentWeekNum][0].date) continue;
             }
 
             // Today is within week i (either we're before the next week's start, or this is the last week).
             currentWeek = `Week ${currentWeekNum}`;
             let w = schedule[i];
             for (let j = 0; j < w.length; j++) {
-                if (w[j].date == todayDateTime.toISOString().split("T")[0]) {
+                if (w[j].date == todayDateStr) {
                     currentDay = w[j].day;
                 }
             }
