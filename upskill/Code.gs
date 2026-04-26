@@ -100,7 +100,7 @@ function splitLearnersByPartner(partnerName, data) {
     for (let i = 0; i < data.length; i++) {
         let firstName = data[i][0].toString();
         let lastName = data[i][1].toString();
-        let partner = data[i][2].toString().toLowerCase();
+        let partner = data[i][2].toString().trim().toLowerCase();
 
         if (partner === partnerName.toLowerCase()) {
             includedLearners.push(firstName + " " + lastName);
@@ -190,7 +190,7 @@ function buildPartnerReport(
 
     let rowsToRemove = [];
     for (let i = 0; i < 16; i++) {
-        let baseWeekRow = 21 + i * (numOfStudents + 7);
+        let baseWeekRow = 23 + i * (numOfStudents + 7);
         for (let j = 0; j < removedLearnersIndices.length; j++) {
             rowsToRemove.push(baseWeekRow + removedLearnersIndices[j]);
         }
@@ -340,7 +340,7 @@ function autoGeneratePartnerReports() {
         .getValues()
         .flat();
     let partnerNames = [
-        ...new Set(allPartnerNames.map((item) => item.toLowerCase())),
+        ...new Set(allPartnerNames.map((item) => item.toString().trim().toLowerCase()).filter(Boolean)),
     ];
 
     for (let partnerNum = 0; partnerNum < partnerNames.length; partnerNum++) {
