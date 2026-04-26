@@ -126,8 +126,7 @@ function processCheckboxSelection(data, type) {
     const newAttendanceSheet = attendanceSheet.copyTo(newSpreadSheet);
     newAttendanceSheet.setName("ATTENDANCE");
 
-    let defaultSheet = newSpreadSheet.getSheetByName("Sheet1");
-    newSpreadSheet.deleteSheet(defaultSheet);
+    newSpreadSheet.deleteSheet(newSpreadSheet.getSheets()[0]);
     const newSpreadSheetURL = newSpreadSheet.getUrl();
 
     let summaryRemovedRows = [];
