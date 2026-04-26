@@ -1,3 +1,8 @@
+/**
+ * Opens a checkbox dialog listing all students with their funding partners.
+ * The user selects which students to include, then submits to generate the report.
+ * All students are unchecked by default — the report includes only checked students.
+ */
 function generateStudentReport() {
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     const summarySheet = spreadsheet.getSheetByName("SUMMARY");
@@ -25,6 +30,12 @@ function generateStudentReport() {
     SpreadsheetApp.getUi().showModalDialog(html, "Choose Students");
 }
 
+/**
+ * Prompts for a funding partner name, then opens the same checkbox dialog as
+ * generateStudentReport but with only that partner's students pre-checked.
+ * The partner name is passed to ReportSelection as the `type` value, which
+ * the template uses to pre-check matching rows.
+ */
 function generatePartnerReport() {
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     const summarySheet = spreadsheet.getSheetByName("SUMMARY");
@@ -56,6 +67,18 @@ function generatePartnerReport() {
     SpreadsheetApp.getUi().showModalDialog(html, "Choose Students");
 }
 
+/**
+ * Creates the report spreadsheet from the checkbox selection submitted by ReportSelection.html.
+ *
+ * `data` is an array of 0-based student indices that were UNCHECKED in the dialog —
+ * these students are excluded from the report. Students not in `data` are included.
+ *
+ * Steps:
+ *  1. Creates a new spreadsheet, copies SUMMARY and ATTENDANCE into it.
+ *  2. Deletes rows for excluded students from both sheets.
+ *  3. Logs the report to the REPORTS sheet.
+ *  4. Re-sets SUMMARY formulas to force recalculation against the trimmed ATTENDANCE.
+ */
 function processCheckboxSelection(data, type) {
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     const summarySheet = spreadsheet.getSheetByName("SUMMARY");
@@ -65,11 +88,8 @@ function processCheckboxSelection(data, type) {
     const numOfExtraSessions = summarySheet.getRange(4, 6, 1, 1).getValue();
     const numOfWeeks = Number(numOfWeeksOnly) + Number(numOfExtraSessions);
 
-    const date = new Date(); // today's date
-    const day = String(date.getDate()).padStart(2, "0"); // dd
-    const month = String(date.getMonth() + 1).padStart(2, "0"); // mm (months are 0-indexed)
-    const year = date.getFullYear(); // yyyy
-    const formattedDate = `${day}/${month}/${year}`;
+    const date = new Date();
+    const formattedDate = `${String(date.getDate()).padStart(2, "0")}/${String(date.getMonth() + 1).padStart(2, "0")}/${date.getFullYear()}`;
 
     const firstNames = summarySheet
         .getRange(14, 1, numOfStudents, 1)
@@ -82,6 +102,7 @@ function processCheckboxSelection(data, type) {
     const fullNames = firstNames.map((first, i) => `${first} ${lastNames[i]}`);
     let selectedStudents = [];
 
+    // Build the list of included students (those not in the unchecked `data` array).
     for (let i = 0; i < fullNames.length; i++) {
         if (!data.includes(i.toString())) {
             selectedStudents.push(fullNames[i]);
@@ -114,17 +135,22 @@ function processCheckboxSelection(data, type) {
 
     for (let i = numOfStudents; i >= 0; i--) {
         if (data.includes(i.toString())) {
+            // SUMMARY: student i is at row 14 + i (rows 1–13 are cohort metadata).
             let summaryRow = i + 14;
             summaryRemovedRows.push(summaryRow);
             newSummarySheet.deleteRow(summaryRow);
 
             for (let j = numOfWeeks - 1; j >= 0; j--) {
+                // ATTENDANCE: each weekly block is (3 + numOfStudents) rows tall.
+                // Student i within week j sits at block start + 1 header row + i.
                 let attendanceRow = (3 + numOfStudents) * j + (4 + i);
                 attendanceRemovedRows.push(attendanceRow);
             }
         }
     }
 
+    // Sort descending so later rows are deleted first — deleting from the bottom
+    // up prevents earlier row numbers from shifting as rows are removed.
     attendanceRemovedRows.sort((a, b) => b - a);
 
     for (let i = 0; i < attendanceRemovedRows.length; i++) {
@@ -137,16 +163,16 @@ function processCheckboxSelection(data, type) {
     reportsSheet.getRange(lastReportRow, 2, 1, 1).setValue(formattedType);
     reportsSheet.getRange(lastReportRow, 3, 1, 1).setValue(newSpreadSheetURL);
 
+    // Re-set formulas to force recalculation now that excluded student rows are gone.
     const refreshSummaryRange = newSummarySheet.getRange(
         14,
         5,
-        numOfStudents,
+        selectedStudents.length,
         2,
     );
     const refreshSummaryFormulas = refreshSummaryRange.getFormulas();
     refreshSummaryRange.setFormulas(refreshSummaryFormulas);
 
     spreadsheet.setActiveSheet(reportsSheet);
-    const reportUi = SpreadsheetApp.getUi();
-    reportUi.alert(`Report Created!`);
+    SpreadsheetApp.getUi().alert(`Report Created!`);
 }
