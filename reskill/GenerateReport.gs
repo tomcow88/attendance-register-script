@@ -25,7 +25,8 @@ function generateStudentReport() {
     template.fullNames = fullNames;
     template.partners = partners;
     template.type = "Student";
-    const html = template.evaluate().setHeight(200).setWidth(300);
+    const height = Math.min(80 + fullNames.length * 24, 500);
+    const html = template.evaluate().setHeight(height).setWidth(300);
 
     SpreadsheetApp.getUi().showModalDialog(html, "Choose Students");
 }
@@ -62,7 +63,8 @@ function generatePartnerReport() {
     template.fullNames = fullNames;
     template.partners = partners;
     template.type = response;
-    const html = template.evaluate().setHeight(200).setWidth(300);
+    const height = Math.min(80 + fullNames.length * 24, 500);
+    const html = template.evaluate().setHeight(height).setWidth(300);
 
     SpreadsheetApp.getUi().showModalDialog(html, "Choose Students");
 }
