@@ -453,7 +453,7 @@ function addReturningLearner() {
             return;
         }
 
-        const priorNumStudents = priorDatabase.getRange(3, 22, 1, 1).getValue();
+        const priorNumStudents = priorDatabase.getRange(3, 23, 1, 1).getValue();
         let priorStudentDatabaseRow = -1;
 
         for (let i = 0; i < priorNumStudents; i++) {
@@ -521,12 +521,12 @@ function addReturningLearner() {
     databaseSheet.getRange(newDatabaseRow, 3, 1, 1).setValue(lastName);
     databaseSheet.getRange(newDatabaseRow, 4, 1, 1).setValue(`["${firstName}"]`);
     databaseSheet.getRange(newDatabaseRow, 5, 1, 1).setValue(`["${meetEmail}"]`);
-    databaseSheet.getRange(newDatabaseRow, 25, 1, 1).setValue(priorUrl);
-    databaseSheet.getRange(newDatabaseRow, 26, 1, 1).setValue(priorGlh);
-    if (priorHack1 === "Yes") databaseSheet.getRange(newDatabaseRow, 27, 1, 1).setValue("Yes");
-    if (priorHack2 === "Yes") databaseSheet.getRange(newDatabaseRow, 28, 1, 1).setValue("Yes");
+    databaseSheet.getRange(newDatabaseRow, 26, 1, 1).setValue(priorUrl);
+    databaseSheet.getRange(newDatabaseRow, 27, 1, 1).setValue(priorGlh);
+    if (priorHack1 === "Yes") databaseSheet.getRange(newDatabaseRow, 28, 1, 1).setValue("Yes");
+    if (priorHack2 === "Yes") databaseSheet.getRange(newDatabaseRow, 29, 1, 1).setValue("Yes");
 
-    databaseSheet.getRange(3, 22, 1, 1).setValue(numOfStudents + 1);
+    databaseSheet.getRange(3, 23, 1, 1).setValue(numOfStudents + 1);
 
     insertLearnerIntoRecords(recordsSheet, numOfStudents, fullName);
 
@@ -560,7 +560,7 @@ function refreshPriorGLH() {
 
     for (let i = 0; i < numOfStudents; i++) {
         const databaseRow = 3 + i;
-        const priorUrl = databaseSheet.getRange(databaseRow, 25, 1, 1).getValue();
+        const priorUrl = databaseSheet.getRange(databaseRow, 26, 1, 1).getValue();
         if (!priorUrl) continue;
 
         const fullName = databaseSheet.getRange(databaseRow, 1, 1, 1).getValue() || `Row ${databaseRow}`;
@@ -583,7 +583,7 @@ function refreshPriorGLH() {
                 continue;
             }
 
-            const priorNumStudents = priorDatabase.getRange(3, 22, 1, 1).getValue();
+            const priorNumStudents = priorDatabase.getRange(3, 23, 1, 1).getValue();
             let priorStudentDatabaseRow = -1;
 
             for (let j = 0; j < priorNumStudents; j++) {
@@ -610,9 +610,9 @@ function refreshPriorGLH() {
             const hack1Raw = priorSummary.getRange(priorSummaryRow, 8, 1, 1).getValue();
             const hack2Raw = priorSummary.getRange(priorSummaryRow, 9, 1, 1).getValue();
 
-            databaseSheet.getRange(databaseRow, 26, 1, 1).setValue(priorGlh);
-            databaseSheet.getRange(databaseRow, 27, 1, 1).setValue(hack1Raw === "Yes" ? "Yes" : "");
-            databaseSheet.getRange(databaseRow, 28, 1, 1).setValue(hack2Raw === "Yes" ? "Yes" : "");
+            databaseSheet.getRange(databaseRow, 27, 1, 1).setValue(priorGlh);
+            databaseSheet.getRange(databaseRow, 28, 1, 1).setValue(hack1Raw === "Yes" ? "Yes" : "");
+            databaseSheet.getRange(databaseRow, 29, 1, 1).setValue(hack2Raw === "Yes" ? "Yes" : "");
             updated++;
         } catch (e) {
             warnings.push(`${fullName}: ${e.message}`);

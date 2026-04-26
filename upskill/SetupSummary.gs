@@ -22,7 +22,7 @@ function setupSummary() {
     summarySheet.getRange(5, 11, 1, 1).setValue(formatDate(startDate));
     summarySheet.getRange(5, 12, 1, 1).setValue(formatDate(endDate));
 
-    const numOfStudents = databaseSheet.getRange(3, 22, 1, 1).getValue();
+    const numOfStudents = databaseSheet.getRange(3, 23, 1, 1).getValue();
 
     // Cohort overview formulas: total learners, active count, and retention rate.
     summarySheet.getRange(8, 11, 1, 1).setValue("=COUNTA(A:A) - 1");
@@ -41,14 +41,14 @@ function setupSummary() {
     );
 
     // Hackathon and project date ranges read from DATABASE and displayed in SUMMARY.
-    const proj1StartDate = databaseSheet.getRange(7, 21, 1, 1).getValue();
-    const proj1EndDate = databaseSheet.getRange(8, 21, 1, 1).getValue();
-    const hack1StartDate = databaseSheet.getRange(11, 21, 1, 1).getValue();
-    const hack1EndDate = databaseSheet.getRange(12, 21, 1, 1).getValue();
-    const proj2StartDate = databaseSheet.getRange(15, 21, 1, 1).getValue();
-    const proj2EndDate = databaseSheet.getRange(16, 21, 1, 1).getValue();
-    const hack2StartDate = databaseSheet.getRange(19, 21, 1, 1).getValue();
-    const hack2EndDate = databaseSheet.getRange(20, 21, 1, 1).getValue();
+    const proj1StartDate = databaseSheet.getRange(7, 22, 1, 1).getValue();
+    const proj1EndDate = databaseSheet.getRange(8, 22, 1, 1).getValue();
+    const hack1StartDate = databaseSheet.getRange(11, 22, 1, 1).getValue();
+    const hack1EndDate = databaseSheet.getRange(12, 22, 1, 1).getValue();
+    const proj2StartDate = databaseSheet.getRange(15, 22, 1, 1).getValue();
+    const proj2EndDate = databaseSheet.getRange(16, 22, 1, 1).getValue();
+    const hack2StartDate = databaseSheet.getRange(19, 22, 1, 1).getValue();
+    const hack2EndDate = databaseSheet.getRange(20, 22, 1, 1).getValue();
 
     summarySheet.getRange(14, 11, 1, 1).setValue(formatDate(hack1StartDate));
     summarySheet.getRange(14, 12, 1, 1).setValue(formatDate(hack1EndDate));
@@ -60,17 +60,17 @@ function setupSummary() {
     summarySheet.getRange(17, 14, 1, 1).setValue(formatDate(proj2EndDate));
 
     // Delivery team names and emails — unpacked from the JSON arrays stored in DATABASE.
-    const facName = JSON.parse(databaseSheet.getRange(3, 15, 1, 1).getValue())[0];
-    const smeName = JSON.parse(databaseSheet.getRange(4, 15, 1, 1).getValue())[0];
-    const ccName = JSON.parse(databaseSheet.getRange(5, 15, 1, 1).getValue())[0];
+    const facName = JSON.parse(databaseSheet.getRange(3, 16, 1, 1).getValue())[0];
+    const smeName = JSON.parse(databaseSheet.getRange(4, 16, 1, 1).getValue())[0];
+    const ccName = JSON.parse(databaseSheet.getRange(5, 16, 1, 1).getValue())[0];
 
     summarySheet.getRange(20, 12, 1, 1).setValue(facName);
     summarySheet.getRange(21, 12, 1, 1).setValue(smeName);
     summarySheet.getRange(22, 12, 1, 1).setValue(ccName);
 
-    const facEmail = JSON.parse(databaseSheet.getRange(3, 16, 1, 1).getValue())[0];
-    const smeEmail = JSON.parse(databaseSheet.getRange(4, 16, 1, 1).getValue())[0];
-    const ccEmail = JSON.parse(databaseSheet.getRange(5, 16, 1, 1).getValue())[0];
+    const facEmail = JSON.parse(databaseSheet.getRange(3, 17, 1, 1).getValue())[0];
+    const smeEmail = JSON.parse(databaseSheet.getRange(4, 17, 1, 1).getValue())[0];
+    const ccEmail = JSON.parse(databaseSheet.getRange(5, 17, 1, 1).getValue())[0];
 
     summarySheet.getRange(20, 13, 1, 1).setValue(facEmail);
     summarySheet.getRange(21, 13, 1, 1).setValue(smeEmail);
@@ -93,7 +93,7 @@ function setupSummary() {
     // Per-student cumulative GLH: sums column 11 of each weekly block for this student's row offset.
     // N(INDIRECT(...col 26...)) adds prior cohort GLH for returning learners; evaluates to 0 for everyone else.
     summarySheet.getRange(2, 6, 1, 1).setValue(
-        `=SUM(INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (0 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (1 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (2 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (3 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (4 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (5 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (6 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (7 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (8 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (9 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (10 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (11 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (12 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (13 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (14 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (15 * ($K$8 + 7)), 11))) + N(INDIRECT("'DATABASE'!" & ADDRESS(ROW() + 1, 26)))`,
+        `=SUM(INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (0 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (1 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (2 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (3 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (4 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (5 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (6 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (7 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (8 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (9 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (10 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (11 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (12 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (13 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (14 * ($K$8 + 7)), 11)), INDIRECT("'RECORDS'!" & ADDRESS((23 + ROW() - 2) + (15 * ($K$8 + 7)), 11))) + N(INDIRECT("'DATABASE'!" & ADDRESS(ROW() + 1, 27)))`,
     );
     // Attendance rate: proportion of GLH achieved, with a stepped formula to handle partial progress.
     summarySheet.getRange(2, 7, 1, 1).setValue(
@@ -101,11 +101,11 @@ function setupSummary() {
     );
     // Hackathon 1: prior cohort attendance overrides current cohort check for returning learners.
     summarySheet.getRange(2, 8).setFormula(
-        `=IF(INDIRECT("'DATABASE'!" & ADDRESS(ROW() + 1, 27)) = "Yes", "Yes", IF(SUM(INDIRECT("'RECORDS'!" & ADDRESS(21 + (7 * ($K$8 + 7)), 52)), INDIRECT("'RECORDS'!" & ADDRESS(21 + (7 * ($K$8 + 7)), 63)), INDIRECT("'RECORDS'!" & ADDRESS(21 + (8 * ($K$8 + 7)), 19))) <= 0, "-----", IF(SUM(INDIRECT("'RECORDS'!" & ADDRESS((21 + ROW()) + (7 * ($K$8 + 7)), 52)), INDIRECT("'RECORDS'!" & ADDRESS((21 + ROW()) + (7 * ($K$8 + 7)), 63)), INDIRECT("'RECORDS'!" & ADDRESS((21 + ROW()) + (8 * ($K$8 + 7)), 19))) > 0, "Yes", "No")))`,
+        `=IF(INDIRECT("'DATABASE'!" & ADDRESS(ROW() + 1, 28)) = "Yes", "Yes", IF(SUM(INDIRECT("'RECORDS'!" & ADDRESS(21 + (7 * ($K$8 + 7)), 52)), INDIRECT("'RECORDS'!" & ADDRESS(21 + (7 * ($K$8 + 7)), 63)), INDIRECT("'RECORDS'!" & ADDRESS(21 + (8 * ($K$8 + 7)), 19))) <= 0, "-----", IF(SUM(INDIRECT("'RECORDS'!" & ADDRESS((21 + ROW()) + (7 * ($K$8 + 7)), 52)), INDIRECT("'RECORDS'!" & ADDRESS((21 + ROW()) + (7 * ($K$8 + 7)), 63)), INDIRECT("'RECORDS'!" & ADDRESS((21 + ROW()) + (8 * ($K$8 + 7)), 19))) > 0, "Yes", "No")))`,
     );
     // Hackathon 2: same pattern as hackathon 1.
     summarySheet.getRange(2, 9, 1, 1).setValue(
-        `=IF(INDIRECT("'DATABASE'!" & ADDRESS(ROW() + 1, 28)) = "Yes", "Yes", IF(SUM(INDIRECT("'RECORDS'!" & ADDRESS(21 + (15 * ($K$8 + 7)), 30)), INDIRECT("'RECORDS'!" & ADDRESS(21 + (15 * ($K$8 + 7)), 41)), INDIRECT("'RECORDS'!" & ADDRESS(21 + (15 * ($K$8 + 7)), 52))) <= 0, "-----", IF(SUM(INDIRECT("'RECORDS'!" & ADDRESS((21 + ROW()) + (15 * ($K$8 + 7)), 30)), INDIRECT("'RECORDS'!" & ADDRESS((21 + ROW()) + (15 * ($K$8 + 7)), 41)), INDIRECT("'RECORDS'!" & ADDRESS((21 + ROW()) + (15 * ($K$8 + 7)), 52))) > 0, "Yes", "No")))`,
+        `=IF(INDIRECT("'DATABASE'!" & ADDRESS(ROW() + 1, 29)) = "Yes", "Yes", IF(SUM(INDIRECT("'RECORDS'!" & ADDRESS(21 + (15 * ($K$8 + 7)), 30)), INDIRECT("'RECORDS'!" & ADDRESS(21 + (15 * ($K$8 + 7)), 41)), INDIRECT("'RECORDS'!" & ADDRESS(21 + (15 * ($K$8 + 7)), 52))) <= 0, "-----", IF(SUM(INDIRECT("'RECORDS'!" & ADDRESS((21 + ROW()) + (15 * ($K$8 + 7)), 30)), INDIRECT("'RECORDS'!" & ADDRESS((21 + ROW()) + (15 * ($K$8 + 7)), 41)), INDIRECT("'RECORDS'!" & ADDRESS((21 + ROW()) + (15 * ($K$8 + 7)), 52))) > 0, "Yes", "No")))`,
     );
 
     // Copy the first student row down for all remaining students, then overwrite names and partner from DATABASE.
@@ -234,8 +234,8 @@ function changeStatus(ui, cell, status) {
     const summarySheet = spreadsheet.getSheetByName("SUMMARY");
     const recordsSheet = spreadsheet.getSheetByName("RECORDS");
     const databaseSheet = spreadsheet.getSheetByName("DATABASE");
-    const numOfStudents = databaseSheet.getRange(3, 22, 1, 1).getValue();
-    const scheduleData = JSON.parse(databaseSheet.getRange(3, 23, 1, 1).getValue());
+    const numOfStudents = databaseSheet.getRange(3, 23, 1, 1).getValue();
+    const scheduleData = JSON.parse(databaseSheet.getRange(3, 24, 1, 1).getValue());
     const weeks = scheduleData.weeks;
     const schedule = scheduleData.schedule;
     const startDate = schedule[0][0].date;
@@ -272,7 +272,7 @@ function changeStatus(ui, cell, status) {
 
     const recordsSymbol = status == "Active" ? "-" : "X";
     const recordsValuesArr = Array.from({ length: 9 }, () => recordsSymbol);
-    const cols = JSON.parse(databaseSheet.getRange(3, 10, 1, 1).getValue());
+    const cols = JSON.parse(databaseSheet.getRange(3, 11, 1, 1).getValue());
     const startWeekRow = 21;
 
     for (let i = 0; i < weeks; i++) {

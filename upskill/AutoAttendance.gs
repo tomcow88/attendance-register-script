@@ -45,7 +45,7 @@ function checkAllAttendance() {
 
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     const databaseSheet = spreadsheet.getSheetByName("DATABASE");
-    const scheduleData = JSON.parse(databaseSheet.getRange(3, 23, 1, 1).getValue());
+    const scheduleData = JSON.parse(databaseSheet.getRange(3, 24, 1, 1).getValue());
     const weeks = scheduleData.weeks;
     const schedule = scheduleData.schedule;
 
@@ -140,7 +140,7 @@ function runAttendanceBetweenDates(startDate, endDate) {
 
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     const databaseSheet = spreadsheet.getSheetByName("DATABASE");
-    const scheduleData = JSON.parse(databaseSheet.getRange(3, 23, 1, 1).getValue());
+    const scheduleData = JSON.parse(databaseSheet.getRange(3, 24, 1, 1).getValue());
     const weeks = scheduleData.weeks;
     const schedule = scheduleData.schedule;
 
@@ -180,7 +180,7 @@ function checkAttendance(todayDate, weekNum, scheduleData) {
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     const databaseSheet = spreadsheet.getSheetByName("DATABASE");
     if (!scheduleData) {
-        scheduleData = JSON.parse(databaseSheet.getRange(3, 23, 1, 1).getValue());
+        scheduleData = JSON.parse(databaseSheet.getRange(3, 24, 1, 1).getValue());
     }
     const weeks = scheduleData.weeks;
     const schedule = scheduleData.schedule;
@@ -434,7 +434,7 @@ function updateAttendance(
     // Write the GLH value into the schedule header row for this session.
     // On project/hackathon days, also write the project GLH into the PRO column.
     const databaseSheet = spreadsheet.getSheetByName("DATABASE");
-    const proGlh = databaseSheet.getRange(8, 9, 1, 1).getValue();
+    const proGlh = databaseSheet.getRange(8, 10, 1, 1).getValue();
     const proCol = getSessonCol(dayNum + 1, "PRO");
     const scheduleRow = sessionStartRow - 2;
 
@@ -462,11 +462,11 @@ function getReportFolderId(abreviation) {
 
     let reportFolderIdsString = false;
     if (abreviation == "SU" || abreviation == "SD" || abreviation == "GS") {
-        reportFolderIdsString = databaseSheet.getRange(3, 17, 1, 1).getValue();
+        reportFolderIdsString = databaseSheet.getRange(3, 18, 1, 1).getValue();
     } else if (abreviation == "SME") {
-        reportFolderIdsString = databaseSheet.getRange(4, 17, 1, 1).getValue();
+        reportFolderIdsString = databaseSheet.getRange(4, 18, 1, 1).getValue();
     } else if (abreviation == "CC") {
-        reportFolderIdsString = databaseSheet.getRange(5, 17, 1, 1).getValue();
+        reportFolderIdsString = databaseSheet.getRange(5, 18, 1, 1).getValue();
     }
 
     if (!reportFolderIdsString) return false;
@@ -486,11 +486,11 @@ function getDeliveryTeam(abreviation) {
 
     let signature = false;
     if (abreviation == "SU" || abreviation == "SD" || abreviation == "GS") {
-        signature = databaseSheet.getRange(8, 15, 1, 1).getValue();
+        signature = databaseSheet.getRange(8, 16, 1, 1).getValue();
     } else if (abreviation == "SME") {
-        signature = databaseSheet.getRange(9, 15, 1, 1).getValue();
+        signature = databaseSheet.getRange(9, 16, 1, 1).getValue();
     } else if (abreviation == "CC") {
-        signature = databaseSheet.getRange(10, 15, 1, 1).getValue();
+        signature = databaseSheet.getRange(10, 16, 1, 1).getValue();
     }
 
     return signature || false;
@@ -505,7 +505,7 @@ function getCalendarNames() {
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     const databaseSheet = spreadsheet.getSheetByName("DATABASE");
 
-    const namesStrings = databaseSheet.getRange(3, 11, 5, 1).getValues().flat();
+    const namesStrings = databaseSheet.getRange(3, 12, 5, 1).getValues().flat();
 
     let names = [];
     for (let i = 0; i < namesStrings.length; i++) {
@@ -533,7 +533,7 @@ function getStudents() {
     const databaseSheet = spreadsheet.getSheetByName("DATABASE");
     const summarySheet = spreadsheet.getSheetByName("SUMMARY");
 
-    const numOfStudents = databaseSheet.getRange(3, 22, 1, 1).getValue();
+    const numOfStudents = databaseSheet.getRange(3, 23, 1, 1).getValue();
     const meetNamesStrings = databaseSheet.getRange(3, 4, numOfStudents, 1).getValues().flat();
     const meetEmailsStrings = databaseSheet.getRange(3, 5, numOfStudents, 1).getValues().flat();
     const statusOfStudents = summarySheet.getRange(2, 4, numOfStudents, 1).getValues().flat();
@@ -559,12 +559,12 @@ function getSessonCol(dayNum, abreviation) {
     const databaseSheet = spreadsheet.getSheetByName("DATABASE");
 
     let sessionColsString = false;
-    if (abreviation == "SU") sessionColsString = databaseSheet.getRange(3, 10, 1, 1).getValue();
-    else if (abreviation == "SD") sessionColsString = databaseSheet.getRange(4, 10, 1, 1).getValue();
-    else if (abreviation == "GS") sessionColsString = databaseSheet.getRange(5, 10, 1, 1).getValue();
-    else if (abreviation == "SME") sessionColsString = databaseSheet.getRange(6, 10, 1, 1).getValue();
-    else if (abreviation == "CC") sessionColsString = databaseSheet.getRange(7, 10, 1, 1).getValue();
-    else if (abreviation == "PRO") sessionColsString = databaseSheet.getRange(8, 10, 1, 1).getValue();
+    if (abreviation == "SU") sessionColsString = databaseSheet.getRange(3, 11, 1, 1).getValue();
+    else if (abreviation == "SD") sessionColsString = databaseSheet.getRange(4, 11, 1, 1).getValue();
+    else if (abreviation == "GS") sessionColsString = databaseSheet.getRange(5, 11, 1, 1).getValue();
+    else if (abreviation == "SME") sessionColsString = databaseSheet.getRange(6, 11, 1, 1).getValue();
+    else if (abreviation == "CC") sessionColsString = databaseSheet.getRange(7, 11, 1, 1).getValue();
+    else if (abreviation == "PRO") sessionColsString = databaseSheet.getRange(8, 11, 1, 1).getValue();
 
     return JSON.parse(sessionColsString)[dayNum];
 }
@@ -575,5 +575,5 @@ function getSessonCol(dayNum, abreviation) {
 function getNumOfStudents() {
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     const databaseSheet = spreadsheet.getSheetByName("DATABASE");
-    return databaseSheet.getRange(3, 22, 1, 1).getValue();
+    return databaseSheet.getRange(3, 23, 1, 1).getValue();
 }

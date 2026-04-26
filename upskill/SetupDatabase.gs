@@ -22,7 +22,7 @@ function setupStudentData() {
     // Count data rows in column A (excluding the two header rows) to get the number of students.
     const numOfStudents =
         setupSheet.getRange("A:A").getValues().filter(String).length - 2;
-    databaseSheet.getRange(3, 22, 1, 1).setValue(numOfStudents);
+    databaseSheet.getRange(3, 23, 1, 1).setValue(numOfStudents);
 
     let studentFirstNames = setupSheet
         .getRange(3, 1, numOfStudents, 1)
@@ -107,11 +107,11 @@ function setupSessionsData() {
     const setupCalSME = setupSheet.getRange(6, 7, 1, 1).getValue();
     const setupCalCC = setupSheet.getRange(7, 7, 1, 1).getValue();
 
-    databaseSheet.getRange(3, 11, 1, 1).setValue(`["${setupCalSU}"]`);
-    databaseSheet.getRange(4, 11, 1, 1).setValue(`["${setupCalSD}"]`);
-    databaseSheet.getRange(5, 11, 1, 1).setValue(`["${setupCalGS}"]`);
-    databaseSheet.getRange(6, 11, 1, 1).setValue(`["${setupCalSME}"]`);
-    databaseSheet.getRange(7, 11, 1, 1).setValue(`["${setupCalCC}"]`);
+    databaseSheet.getRange(3, 12, 1, 1).setValue(`["${setupCalSU}"]`);
+    databaseSheet.getRange(4, 12, 1, 1).setValue(`["${setupCalSD}"]`);
+    databaseSheet.getRange(5, 12, 1, 1).setValue(`["${setupCalGS}"]`);
+    databaseSheet.getRange(6, 12, 1, 1).setValue(`["${setupCalSME}"]`);
+    databaseSheet.getRange(7, 12, 1, 1).setValue(`["${setupCalCC}"]`);
 
     // Row 20 of RECORDS contains session type labels (e.g. "SU", "SD") in each column.
     // Scan every column to build an ordered list of column numbers per session type.
@@ -132,12 +132,12 @@ function setupSessionsData() {
         else if (value == "PRO") proCols.push(String(i + 1));
     }
 
-    databaseSheet.getRange(3, 10, 1, 1).setValue(JSON.stringify(suCols));
-    databaseSheet.getRange(4, 10, 1, 1).setValue(JSON.stringify(sdCols));
-    databaseSheet.getRange(5, 10, 1, 1).setValue(JSON.stringify(gsCols));
-    databaseSheet.getRange(6, 10, 1, 1).setValue(JSON.stringify(smeCols));
-    databaseSheet.getRange(7, 10, 1, 1).setValue(JSON.stringify(ccCols));
-    databaseSheet.getRange(8, 10, 1, 1).setValue(JSON.stringify(proCols));
+    databaseSheet.getRange(3, 11, 1, 1).setValue(JSON.stringify(suCols));
+    databaseSheet.getRange(4, 11, 1, 1).setValue(JSON.stringify(sdCols));
+    databaseSheet.getRange(5, 11, 1, 1).setValue(JSON.stringify(gsCols));
+    databaseSheet.getRange(6, 11, 1, 1).setValue(JSON.stringify(smeCols));
+    databaseSheet.getRange(7, 11, 1, 1).setValue(JSON.stringify(ccCols));
+    databaseSheet.getRange(8, 11, 1, 1).setValue(JSON.stringify(proCols));
 }
 
 /**
@@ -166,22 +166,22 @@ function setupDeliveryTeamData() {
     const ccFolderId = getFolderIdFromUrl(setupCcUrl);
 
     // Names and emails are stored as JSON arrays to support future multi-value expansion.
-    databaseSheet.getRange(3, 15, 1, 1).setValue(`["${setupFacName}"]`);
-    databaseSheet.getRange(3, 16, 1, 1).setValue(`["${setupFacEmail}"]`);
-    databaseSheet.getRange(3, 17, 1, 1).setValue(`["${facFolderId}"]`);
+    databaseSheet.getRange(3, 16, 1, 1).setValue(`["${setupFacName}"]`);
+    databaseSheet.getRange(3, 17, 1, 1).setValue(`["${setupFacEmail}"]`);
+    databaseSheet.getRange(3, 18, 1, 1).setValue(`["${facFolderId}"]`);
 
-    databaseSheet.getRange(4, 15, 1, 1).setValue(`["${setupSmeName}"]`);
-    databaseSheet.getRange(4, 16, 1, 1).setValue(`["${setupSmeEmail}"]`);
-    databaseSheet.getRange(4, 17, 1, 1).setValue(`["${smeFolderId}"]`);
+    databaseSheet.getRange(4, 16, 1, 1).setValue(`["${setupSmeName}"]`);
+    databaseSheet.getRange(4, 17, 1, 1).setValue(`["${setupSmeEmail}"]`);
+    databaseSheet.getRange(4, 18, 1, 1).setValue(`["${smeFolderId}"]`);
 
-    databaseSheet.getRange(5, 15, 1, 1).setValue(`["${setupCcName}"]`);
-    databaseSheet.getRange(5, 16, 1, 1).setValue(`["${setupCcEmail}"]`);
-    databaseSheet.getRange(5, 17, 1, 1).setValue(`["${ccFolderId}"]`);
+    databaseSheet.getRange(5, 16, 1, 1).setValue(`["${setupCcName}"]`);
+    databaseSheet.getRange(5, 17, 1, 1).setValue(`["${setupCcEmail}"]`);
+    databaseSheet.getRange(5, 18, 1, 1).setValue(`["${ccFolderId}"]`);
 
     // Plain name values are also stored separately for use as signatures in RECORDS.
-    databaseSheet.getRange(8, 15, 1, 1).setValue(setupFacName);
-    databaseSheet.getRange(9, 15, 1, 1).setValue(setupSmeName);
-    databaseSheet.getRange(10, 15, 1, 1).setValue(setupCcName);
+    databaseSheet.getRange(8, 16, 1, 1).setValue(setupFacName);
+    databaseSheet.getRange(9, 16, 1, 1).setValue(setupSmeName);
+    databaseSheet.getRange(10, 16, 1, 1).setValue(setupCcName);
 }
 
 /**
@@ -209,29 +209,29 @@ function setupCohortData() {
 
     if (!(partner && location && startDate)) return;
 
-    databaseSheet.getRange(3, 19, 1, 1).setValue(partner);
-    databaseSheet.getRange(3, 20, 1, 1).setValue(location);
-    databaseSheet.getRange(3, 21, 1, 1).setValue(startDate);
+    databaseSheet.getRange(3, 20, 1, 1).setValue(partner);
+    databaseSheet.getRange(3, 21, 1, 1).setValue(location);
+    databaseSheet.getRange(3, 22, 1, 1).setValue(startDate);
 
     const holidays = getPublicHolidays(location);
     const scheduleData = generateSchedule(startDate, holidays);
 
     // Serialise the full schedule as JSON so it can be read back by other functions at runtime.
-    databaseSheet.getRange(3, 23, 1, 1).setValue(JSON.stringify(scheduleData));
+    databaseSheet.getRange(3, 24, 1, 1).setValue(JSON.stringify(scheduleData));
 
     const schedule = scheduleData.schedule;
     const weeks = scheduleData.weeks;
     const lastDay = schedule[weeks - 1][schedule[weeks - 1].length - 1].date;
 
-    databaseSheet.getRange(4, 21, 1, 1).setValue(lastDay);
-    databaseSheet.getRange(7, 21, 1, 1).setValue(scheduleData.proj1StartDate);
-    databaseSheet.getRange(8, 21, 1, 1).setValue(scheduleData.proj1EndDate);
-    databaseSheet.getRange(11, 21, 1, 1).setValue(scheduleData.hack1StartDate);
-    databaseSheet.getRange(12, 21, 1, 1).setValue(scheduleData.hack1EndDate);
-    databaseSheet.getRange(15, 21, 1, 1).setValue(scheduleData.proj2StartDate);
-    databaseSheet.getRange(16, 21, 1, 1).setValue(scheduleData.proj2EndDate);
-    databaseSheet.getRange(19, 21, 1, 1).setValue(scheduleData.hack2StartDate);
-    databaseSheet.getRange(20, 21, 1, 1).setValue(scheduleData.hack2EndDate);
+    databaseSheet.getRange(4, 22, 1, 1).setValue(lastDay);
+    databaseSheet.getRange(7, 22, 1, 1).setValue(scheduleData.proj1StartDate);
+    databaseSheet.getRange(8, 22, 1, 1).setValue(scheduleData.proj1EndDate);
+    databaseSheet.getRange(11, 22, 1, 1).setValue(scheduleData.hack1StartDate);
+    databaseSheet.getRange(12, 22, 1, 1).setValue(scheduleData.hack1EndDate);
+    databaseSheet.getRange(15, 22, 1, 1).setValue(scheduleData.proj2StartDate);
+    databaseSheet.getRange(16, 22, 1, 1).setValue(scheduleData.proj2EndDate);
+    databaseSheet.getRange(19, 22, 1, 1).setValue(scheduleData.hack2StartDate);
+    databaseSheet.getRange(20, 22, 1, 1).setValue(scheduleData.hack2EndDate);
 }
 
 /**

@@ -14,8 +14,8 @@ function setupRecords() {
     const recordsSheet = spreadsheet.getSheetByName("RECORDS");
     const recordsLastCol = recordsSheet.getLastColumn();
 
-    const numOfStudents = databaseSheet.getRange(3, 22, 1, 1).getValue();
-    const scheduleData = JSON.parse(databaseSheet.getRange(3, 23, 1, 1).getValue());
+    const numOfStudents = databaseSheet.getRange(3, 23, 1, 1).getValue();
+    const scheduleData = JSON.parse(databaseSheet.getRange(3, 24, 1, 1).getValue());
     const weeks = scheduleData.weeks;
     const schedule = scheduleData.schedule;
     const fullNames = databaseSheet
@@ -54,9 +54,9 @@ function setupRecords() {
     const dateDayColDifference = defaultDateDayCols + 1;
 
     const percentCol = 12;
-    const proCols = JSON.parse(databaseSheet.getRange(8, 10, 1, 1).getValue());
-    const suCols = JSON.parse(databaseSheet.getRange(3, 10, 1, 1).getValue());
-    const proGlh = databaseSheet.getRange(8, 9, 1, 1).getValue();
+    const proCols = JSON.parse(databaseSheet.getRange(8, 11, 1, 1).getValue());
+    const suCols = JSON.parse(databaseSheet.getRange(3, 11, 1, 1).getValue());
+    const proGlh = databaseSheet.getRange(8, 10, 1, 1).getValue();
 
     // PRO (project hours) formula: awards project GLH if either the SU or SD column for that
     // student has a positive value or a "-" marker, otherwise 0. Propagates "X" for inactive students.
@@ -164,7 +164,7 @@ function getCurrentWeekData(todayDate) {
     const spreadsheet = SpreadsheetApp.getActiveSpreadsheet();
     const databaseSheet = spreadsheet.getSheetByName("DATABASE");
 
-    const scheduleData = JSON.parse(databaseSheet.getRange(3, 23, 1, 1).getValue());
+    const scheduleData = JSON.parse(databaseSheet.getRange(3, 24, 1, 1).getValue());
     const weeks = scheduleData.weeks;
     const schedule = scheduleData.schedule;
 
@@ -232,7 +232,7 @@ function getStartOrEndDate(startOrEnd, dateOrDateTime) {
     const databaseSheet = spreadsheet.getSheetByName("DATABASE");
 
     const dateRow = startOrEnd == "start" ? 3 : 4;
-    const dateTime = new Date(databaseSheet.getRange(dateRow, 21, 1, 1).getValue());
+    const dateTime = new Date(databaseSheet.getRange(dateRow, 22, 1, 1).getValue());
     dateTime.setHours(6, 0, 0, 0);
 
     return dateOrDateTime == "date" ? dateTime.toISOString().split("T")[0] : dateTime;
